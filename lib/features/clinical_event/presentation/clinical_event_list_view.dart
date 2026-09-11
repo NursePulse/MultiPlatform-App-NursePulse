@@ -225,8 +225,9 @@ class _RegisterEventDialogState extends ConsumerState<_RegisterEventDialog> {
               TextFormField(
                 controller: _title,
                 decoration: const InputDecoration(labelText: 'Título'),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? 'Requerido'
+                validator: (value) =>
+                    (value == null || value.trim().length < 4)
+                    ? 'Mínimo 4 caracteres'
                     : null,
               ),
               const SizedBox(height: 8),
@@ -234,8 +235,9 @@ class _RegisterEventDialogState extends ConsumerState<_RegisterEventDialog> {
                 controller: _description,
                 decoration: const InputDecoration(labelText: 'Descripción'),
                 maxLines: 3,
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? 'Requerido'
+                validator: (value) =>
+                    (value == null || value.trim().length < 10)
+                    ? 'Mínimo 10 caracteres'
                     : null,
               ),
               if (_error != null) ...[
