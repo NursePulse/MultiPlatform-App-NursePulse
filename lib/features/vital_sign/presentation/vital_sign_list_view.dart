@@ -148,8 +148,25 @@ class _RecordVitalSignDialogState
     super.dispose();
   }
 
+  /// Mirrors validateForm() in vital-sign-list.ts: the backend enforces each
+  /// field's own range independently but never checks that systolic exceeds
+  /// diastolic, so that specific check has to happen here.
+  String? _crossFieldError() {
+    final systolic = num.tryParse(_systolic.text);
+    final diastolic = num.tryParse(_diastolic.text);
+    if (systolic != null && diastolic != null && systolic <= diastolic) {
+      return 'La presión sistólica debe ser mayor que la diastólica.';
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final crossFieldError = _crossFieldError();
+    if (crossFieldError != null) {
+      setState(() => _error = crossFieldError);
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -176,13 +193,24 @@ class _RecordVitalSignDialogState
     }
   }
 
-  Widget _numberField(TextEditingController controller, String label) {
+  Widget _numberField(
+    TextEditingController controller,
+    String label, {
+    required num min,
+    required num max,
+  }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(labelText: label),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      validator: (value) =>
-          (value == null || num.tryParse(value) == null) ? 'Requerido' : null,
+      validator: (value) {
+        final parsed = value == null ? null : num.tryParse(value);
+        if (parsed == null) return 'Requerido';
+        if (parsed < min || parsed > max) {
+          return 'Debe estar entre $min y $max.';
+        }
+        return null;
+      },
     );
   }
 
@@ -214,25 +242,62 @@ class _RecordVitalSignDialogState
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _numberField(_heartRate, 'FC (lpm)')),
+                  Expanded(
+                    child: _numberField(
+                      _heartRate,
+                      'FC (lpm)',
+                      min: 20,
+                      max: 250,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _numberField(_respiratoryRate, 'FR (rpm)')),
+                  Expanded(
+                    child: _numberField(
+                      _respiratoryRate,
+                      'FR (rpm)',
+                      min: 5,
+                      max: 80,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _numberField(_systolic, 'TA sistólica')),
+                  Expanded(
+                    child: _numberField(
+                      _systolic,
+                      'TA sistólica',
+                      min: 50,
+                      max: 260,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _numberField(_diastolic, 'TA diastólica')),
+                  Expanded(
+                    child: _numberField(
+                      _diastolic,
+                      'TA diastólica',
+                      min: 30,
+                      max: 180,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _numberField(_oxygen, 'SpO2 (%)')),
+                  Expanded(
+                    child: _numberField(_oxygen, 'SpO2 (%)', min: 0, max: 100),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _numberField(_temperature, 'Temp (°C)')),
+                  Expanded(
+                    child: _numberField(
+                      _temperature,
+                      'Temp (°C)',
+                      min: 30,
+                      max: 45,
+                    ),
+                  ),
                 ],
               ),
               if (_error != null) ...[

@@ -39,6 +39,32 @@ class AlertNotifier extends StateNotifier<AlertState> {
   Future<List<Alert>> loadForPatient(String patientId) =>
       _api.getByPatientId(patientId);
 
+  /// Mirrors createManualAlert() in notification.store.ts, including the
+  /// hardcoded "Equipo clínico" actor (not the real username).
+  Future<Alert> create({
+    required String patientId,
+    required String type,
+    required AlertSeverity severity,
+    required String description,
+  }) async {
+    final alert = await _api.create(
+      patientId: patientId,
+      type: type,
+      severity: severity,
+      description: description,
+      triggeredBy: 'Equipo clínico',
+    );
+    state = state.copyWith(alerts: [alert, ...state.alerts]);
+    registerAudit(
+      _ref,
+      entityType: 'ALERT',
+      entityId: alert.id,
+      actionType: 'ALERT_CREATED',
+      patientId: alert.patientId,
+    );
+    return alert;
+  }
+
   void _replace(Alert updated) {
     state = state.copyWith(
       alerts: [

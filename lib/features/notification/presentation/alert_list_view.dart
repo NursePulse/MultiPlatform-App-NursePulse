@@ -9,6 +9,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../iam/application/auth_notifier.dart';
 import '../../iam/domain/user.dart';
 import '../../patient/application/patient_notifier.dart';
+import '../../patient/domain/patient.dart';
 import '../application/alert_notifier.dart';
 import '../domain/alert.dart';
 
@@ -54,6 +55,11 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     final username = user?.username ?? '';
     final canCloseAlerts = user?.hasAnyRole([kRoleHeadAdminNurse]) ?? false;
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Registrar alerta'),
+      ),
       body: Column(
         children: [
           const PageTitle('Alertas'),
@@ -114,6 +120,162 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showCreateDialog(BuildContext context) async {
+    final patients = ref.read(patientNotifierProvider).patients;
+    if (patients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registra un paciente primero.')),
+      );
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (context) => _CreateAlertDialog(patients: patients),
+    );
+  }
+}
+
+class _CreateAlertDialog extends ConsumerStatefulWidget {
+  const _CreateAlertDialog({required this.patients});
+
+  final List<Patient> patients;
+
+  @override
+  ConsumerState<_CreateAlertDialog> createState() =>
+      _CreateAlertDialogState();
+}
+
+class _CreateAlertDialogState extends ConsumerState<_CreateAlertDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late Patient _patient = widget.patients.first;
+  String _type = AlertType.cardiac;
+  AlertSeverity _severity = AlertSeverity.critical;
+  final _description = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _description.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(alertNotifierProvider.notifier)
+          .create(
+            patientId: _patient.id,
+            type: _type,
+            severity: _severity,
+            description: _description.text.trim(),
+          );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      setState(() => _error = describeDioError(e));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Registrar alerta'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<Patient>(
+                initialValue: _patient,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Paciente'),
+                items: [
+                  for (final patient in widget.patients)
+                    DropdownMenuItem(
+                      value: patient,
+                      child: Text(patient.fullName),
+                    ),
+                ],
+                onChanged: (value) =>
+                    setState(() => _patient = value ?? _patient),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: _type,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Tipo de alerta'),
+                items: [
+                  for (final type in AlertType.values)
+                    DropdownMenuItem(
+                      value: type,
+                      child: Text(AlertType.label(type)),
+                    ),
+                ],
+                onChanged: (value) =>
+                    setState(() => _type = value ?? _type),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<AlertSeverity>(
+                initialValue: _severity,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Severidad'),
+                items: [
+                  for (final severity in AlertSeverity.values)
+                    DropdownMenuItem(
+                      value: severity,
+                      child: Text(severity.label),
+                    ),
+                ],
+                onChanged: (value) =>
+                    setState(() => _severity = value ?? _severity),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _description,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 3,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Requerido'
+                    : null,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

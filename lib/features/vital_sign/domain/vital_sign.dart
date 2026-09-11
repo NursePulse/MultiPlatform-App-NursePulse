@@ -53,19 +53,87 @@ class VitalSign {
   final RiskLevel riskLevel;
   final DateTime recordedAt;
 
-  factory VitalSign.fromJson(Map<String, dynamic> json) => VitalSign(
-    id: json['id'].toString(),
-    patientId: json['patientId'].toString(),
-    nurseId: json['nurseId'].toString(),
-    heartRate: json['heartRate'] as num,
-    respiratoryRate: json['respiratoryRate'] as num,
-    systolic: json['systolic'] as num,
-    diastolic: json['diastolic'] as num,
-    oxygenSaturation: json['oxygenSaturation'] as num,
-    temperature: json['temperature'] as num,
-    riskLevel: RiskLevelX.fromWire(json['riskLevel'] as String),
-    recordedAt: DateTime.parse(json['recordedAt'] as String),
-  );
+  factory VitalSign.fromJson(Map<String, dynamic> json) {
+    final heartRate = json['heartRate'] as num;
+    final respiratoryRate = json['respiratoryRate'] as num;
+    final systolic = json['systolic'] as num;
+    final diastolic = json['diastolic'] as num;
+    final oxygenSaturation = json['oxygenSaturation'] as num;
+    final temperature = json['temperature'] as num;
+
+    final backendRisk = RiskLevelX.fromWire(json['riskLevel'] as String);
+    final riskLevel = backendRisk != RiskLevel.unassessed
+        ? backendRisk
+        : _calculateRiskLevel(
+            heartRate: heartRate,
+            respiratoryRate: respiratoryRate,
+            systolic: systolic,
+            diastolic: diastolic,
+            oxygenSaturation: oxygenSaturation,
+            temperature: temperature,
+          );
+
+    return VitalSign(
+      id: json['id'].toString(),
+      patientId: json['patientId'].toString(),
+      nurseId: json['nurseId'].toString(),
+      heartRate: heartRate,
+      respiratoryRate: respiratoryRate,
+      systolic: systolic,
+      diastolic: diastolic,
+      oxygenSaturation: oxygenSaturation,
+      temperature: temperature,
+      riskLevel: riskLevel,
+      recordedAt: DateTime.parse(json['recordedAt'] as String),
+    );
+  }
+
+  /// The backend's riskLevel currently always comes back UNASSESSED, so this
+  /// fallback (mirrors calculateRiskLevel() in vital-sign-assembler.ts) is
+  /// what actually determines the risk badge shown to the nurse in practice.
+  static RiskLevel _calculateRiskLevel({
+    required num heartRate,
+    required num respiratoryRate,
+    required num systolic,
+    required num diastolic,
+    required num oxygenSaturation,
+    required num temperature,
+  }) {
+    final isCritical =
+        oxygenSaturation < 90 ||
+        heartRate >= 130 ||
+        heartRate < 40 ||
+        respiratoryRate >= 30 ||
+        respiratoryRate < 8 ||
+        systolic >= 180 ||
+        systolic < 80 ||
+        diastolic >= 120 ||
+        temperature >= 39.5 ||
+        temperature < 35;
+    if (isCritical) return RiskLevel.critical;
+
+    final isHigh =
+        oxygenSaturation < 94 ||
+        heartRate >= 110 ||
+        heartRate < 50 ||
+        respiratoryRate >= 24 ||
+        systolic >= 160 ||
+        systolic < 90 ||
+        diastolic >= 100 ||
+        temperature >= 38;
+    if (isHigh) return RiskLevel.high;
+
+    final isMedium =
+        heartRate >= 100 ||
+        respiratoryRate >= 20 ||
+        systolic >= 140 ||
+        diastolic >= 90 ||
+        oxygenSaturation < 96 ||
+        temperature >= 37.5;
+    if (isMedium) return RiskLevel.medium;
+
+    return RiskLevel.low;
+  }
 
   String get bloodPressureFormatted => 'TA $systolic/$diastolic';
 
