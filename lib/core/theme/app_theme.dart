@@ -24,37 +24,33 @@ class AppTheme {
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderAlt = Color(0xFFCBD5E1);
 
-  static ThemeData light() => _base(_scheme(Brightness.light));
+  // The Angular app has no dark mode, so there is only one theme here —
+  // it always renders with this light, Angular-matched palette.
+  static ThemeData light() => _base(_scheme());
 
-  static ThemeData dark() => _base(_scheme(Brightness.dark));
-
-  static ColorScheme _scheme(Brightness brightness) {
+  static ColorScheme _scheme() {
     final scheme = ColorScheme.fromSeed(
       seedColor: primary,
-      brightness: brightness,
+      brightness: Brightness.light,
     );
-    return brightness == Brightness.light
-        ? scheme.copyWith(
-            primary: primary,
-            primaryContainer: primarySurface,
-            onPrimaryContainer: primaryDark,
-            secondary: primaryAlt,
-            surface: Colors.white,
-            surfaceContainerHighest: surfaceAlt,
-            onSurface: textPrimary,
-            outlineVariant: border,
-            error: ClinicalColors.dangerText,
-          )
-        : scheme.copyWith(primary: primaryAlt, secondary: primary);
+    return scheme.copyWith(
+      primary: primary,
+      primaryContainer: primarySurface,
+      onPrimaryContainer: primaryDark,
+      secondary: primaryAlt,
+      surface: Colors.white,
+      surfaceContainerHighest: surfaceAlt,
+      onSurface: textPrimary,
+      outlineVariant: border,
+      error: ClinicalColors.dangerText,
+    );
   }
 
   static ThemeData _base(ColorScheme scheme) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.brightness == Brightness.light
-          ? surface
-          : scheme.surface,
+      scaffoldBackgroundColor: surface,
       fontFamily: 'Inter',
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,

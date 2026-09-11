@@ -19,7 +19,10 @@ class NursePulseApp extends ConsumerWidget {
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      // The Angular app has no dark mode — always render the light palette
+      // so both platforms look identical regardless of the OS/browser
+      // color-scheme preference.
+      themeMode: ThemeMode.light,
       routerConfig: router,
     );
   }
