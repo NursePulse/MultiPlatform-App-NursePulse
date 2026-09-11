@@ -56,6 +56,40 @@ class PatientNotifier extends StateNotifier<PatientState> {
     return patient;
   }
 
+  Future<Patient> update(String id, RegisterPatientCommand command) async {
+    final updated = await _api.update(id, command);
+    state = state.copyWith(
+      patients: [
+        for (final p in state.patients)
+          if (p.id == id) updated else p,
+      ],
+    );
+    return updated;
+  }
+
+  /// Discharging is just an update that flips status to DISCHARGED, keeping
+  /// every other field — mirrors dischargePatient() in patient.store.ts.
+  Future<void> discharge(String id) async {
+    final patient = byId(id);
+    if (patient == null) return;
+    await update(
+      id,
+      RegisterPatientCommand(
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        documentNumber: patient.documentNumber,
+        birthDate: patient.birthDate,
+        gender: patient.gender,
+        diagnosis: patient.diagnosis,
+        roomNumber: patient.roomNumber,
+        bedNumber: patient.bedNumber,
+        attendingPhysician: patient.attendingPhysician,
+        status: PatientStatus.discharged,
+        admissionDate: patient.admissionDate,
+      ),
+    );
+  }
+
   Future<void> delete(String id) async {
     await _api.delete(id);
     state = state.copyWith(

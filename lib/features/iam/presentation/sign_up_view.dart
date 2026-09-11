@@ -26,7 +26,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _role = kRoleNurse;
+  static const _role = kRoleNurse;
   String? _error;
   String? _success;
   bool _submitting = false;
@@ -120,29 +120,6 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                             (value == null || value.trim().length < 3)
                             ? 'Mínimo 3 caracteres'
                             : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Tipo de cuenta',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 4),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(
-                            value: kRoleNurse,
-                            label: Text('Enfermería'),
-                            icon: Icon(Icons.favorite_outline),
-                          ),
-                          ButtonSegment(
-                            value: 'ROLE_DOCTOR',
-                            label: Text('Médico'),
-                            icon: Icon(Icons.medical_services_outlined),
-                          ),
-                        ],
-                        selected: {_role},
-                        onSelectionChanged: (selection) =>
-                            setState(() => _role = selection.first),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
