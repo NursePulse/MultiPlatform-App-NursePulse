@@ -6,6 +6,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/async_value_view.dart';
 import '../../../shared/widgets/page_title.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../iam/application/auth_notifier.dart';
+import '../../iam/application/users_notifier.dart';
+import '../../iam/domain/user.dart';
 import '../../patient/application/patient_notifier.dart';
 import '../../patient/domain/patient.dart';
 import '../application/sbar_notifier.dart';
@@ -25,6 +28,7 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
     Future.microtask(() {
       ref.read(sbarNotifierProvider.notifier).load();
       ref.read(patientNotifierProvider.notifier).load();
+      ref.read(usersNotifierProvider.notifier).load();
     });
   }
 
@@ -125,6 +129,11 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
                   'Registrado por ${transfer.registeredBy}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+              if (_resolveReceiverName(transfer.targetNurseId) != null)
+                Text(
+                  'Para ${_resolveReceiverName(transfer.targetNurseId)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               const SizedBox(height: 16),
               _SbarSection(label: 'Situación', value: transfer.situation),
               _SbarSection(label: 'Antecedentes', value: transfer.background),
@@ -163,8 +172,30 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
     }
     await showDialog<void>(
       context: context,
-      builder: (context) => _RegisterSbarDialog(patients: patients),
+      builder: (context) =>
+          _RegisterSbarDialog(patients: patients, nurses: _receiverOptions()),
     );
+  }
+
+  List<User> _receiverOptions() {
+    final currentUserId = ref.read(authNotifierProvider).user?.id;
+    return ref
+        .read(usersNotifierProvider)
+        .users
+        .where(
+          (user) =>
+              user.roles.contains(kRoleNurse) && user.id != currentUserId,
+        )
+        .toList();
+  }
+
+  String? _resolveReceiverName(String? targetNurseId) {
+    if (targetNurseId == null) return null;
+    final users = ref.read(usersNotifierProvider).users;
+    for (final user in users) {
+      if (user.id == targetNurseId) return user.username;
+    }
+    return null;
   }
 }
 
@@ -196,9 +227,10 @@ class _SbarSection extends StatelessWidget {
 }
 
 class _RegisterSbarDialog extends ConsumerStatefulWidget {
-  const _RegisterSbarDialog({required this.patients});
+  const _RegisterSbarDialog({required this.patients, required this.nurses});
 
   final List<Patient> patients;
+  final List<User> nurses;
 
   @override
   ConsumerState<_RegisterSbarDialog> createState() =>
@@ -208,6 +240,7 @@ class _RegisterSbarDialog extends ConsumerStatefulWidget {
 class _RegisterSbarDialogState extends ConsumerState<_RegisterSbarDialog> {
   final _formKey = GlobalKey<FormState>();
   late Patient _patient = widget.patients.first;
+  User? _nurse;
   final _situation = TextEditingController();
   final _background = TextEditingController();
   final _assessment = TextEditingController();
@@ -241,6 +274,7 @@ class _RegisterSbarDialogState extends ConsumerState<_RegisterSbarDialog> {
               background: _background.text.trim(),
               assessment: _assessment.text.trim(),
               recommendation: _recommendation.text.trim(),
+              targetNurseId: _nurse?.id,
             ),
           );
       if (mounted) Navigator.of(context).pop();
@@ -279,6 +313,24 @@ class _RegisterSbarDialogState extends ConsumerState<_RegisterSbarDialog> {
                   ],
                   onChanged: (value) =>
                       setState(() => _patient = value ?? _patient),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<User>(
+                  initialValue: _nurse,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Personal receptor',
+                  ),
+                  items: [
+                    for (final nurse in widget.nurses)
+                      DropdownMenuItem(
+                        value: nurse,
+                        child: Text(nurse.username),
+                      ),
+                  ],
+                  validator: (value) =>
+                      value == null ? 'Requerido' : null,
+                  onChanged: (value) => setState(() => _nurse = value),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(

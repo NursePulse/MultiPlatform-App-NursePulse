@@ -10,6 +10,7 @@ class SbarTransfer {
     required this.status,
     this.registeredBy,
     this.incomingNurseId,
+    this.targetNurseId,
     this.additionalNotes,
     this.transferredAt,
   });
@@ -24,6 +25,7 @@ class SbarTransfer {
   final String status;
   final String? registeredBy;
   final String? incomingNurseId;
+  final String? targetNurseId;
   final String? additionalNotes;
   final DateTime? transferredAt;
 
@@ -38,6 +40,7 @@ class SbarTransfer {
     status: json['status'] as String? ?? 'PENDING',
     registeredBy: json['registeredBy'] as String?,
     incomingNurseId: json['incomingNurseId']?.toString(),
+    targetNurseId: json['targetNurseId']?.toString(),
     additionalNotes: json['additionalNotes'] as String?,
     // The backend names this field `createdAt`; `transferredAt` is kept as a
     // fallback in case an older API version is ever pointed at by mistake.
@@ -64,6 +67,7 @@ class RegisterSbarCommand {
     required this.background,
     required this.assessment,
     required this.recommendation,
+    this.targetNurseId,
   });
 
   final String patientId;
@@ -72,6 +76,7 @@ class RegisterSbarCommand {
   final String background;
   final String assessment;
   final String recommendation;
+  final String? targetNurseId;
 
   Map<String, dynamic> toJson() => {
     'patientId': int.parse(patientId),
@@ -80,5 +85,6 @@ class RegisterSbarCommand {
     'background': background,
     'assessment': assessment,
     'recommendation': recommendation,
+    if (targetNurseId != null) 'targetNurseId': int.parse(targetNurseId!),
   };
 }
