@@ -41,21 +41,25 @@ class UsersNotifier extends StateNotifier<UsersState> {
   final UsersApi _usersApi;
   final RolesApi _rolesApi;
 
+  /// Users and roles are fetched independently: GET /roles is admin-only,
+  /// so a nurse loading this for a receiver dropdown must not lose the user
+  /// list just because the roles catalog (only needed for role-assignment
+  /// UI) came back 403.
   Future<void> load() async {
     state = state.copyWith(loading: true, error: null);
     try {
-      final results = await Future.wait([
-        _usersApi.getAll(),
-        _rolesApi.getAll(),
-      ]);
-      state = state.copyWith(
-        users: results[0] as List<User>,
-        roles: results[1] as List<RoleOption>,
-        loading: false,
-      );
+      final users = await _usersApi.getAll();
+      state = state.copyWith(users: users);
     } catch (e) {
-      state = state.copyWith(loading: false, error: describeDioError(e));
+      state = state.copyWith(error: describeDioError(e));
     }
+    try {
+      final roles = await _rolesApi.getAll();
+      state = state.copyWith(roles: roles);
+    } catch (_) {
+      // Role catalog is only needed by the admin role-assignment screen.
+    }
+    state = state.copyWith(loading: false);
   }
 
   Future<void> updateRoles(String userId, List<String> roles) async {
