@@ -1,0 +1,33 @@
+name: Mobile CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL=https://backend-nursepulse-qfct.onrender.com/api/v1
+
+      - name: Distribute to Firebase App Distribution
+        run: |
+          npx firebase-tools appdistribution:distribute \
+            build/app/outputs/flutter-apk/app-release.apk \
+            --app 1:945075743268:android:58b6bf963cfb8b4ab906b1 \
+            --groups "testers" \
+            --release-notes "Build automático desde ${{ github.sha }}" \
+            --token "${{ secrets.FIREBASE_TOKEN }}"
