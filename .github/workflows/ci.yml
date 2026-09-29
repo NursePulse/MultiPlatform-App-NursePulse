@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-distribute:
     runs-on: ubuntu-latest
@@ -31,3 +34,18 @@ jobs:
             --groups "testers" \
             --release-notes "Build automático desde ${{ github.sha }}" \
             --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Read app version
+        id: app_version
+        run: |
+          version=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.app_version.outputs.version }}-${{ github.run_number }}
+          name: NursePulse v${{ steps.app_version.outputs.version }} (build ${{ github.run_number }})
+          body: Build automático desde ${{ github.sha }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          make_latest: true
