@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/auth_page.dart';
 import '../application/auth_notifier.dart';
 import '../domain/sign_up_request.dart';
 
@@ -196,165 +197,142 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
       FilteringTextInputFormatter.allow(RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]')),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Crear cuenta clínica'),
-        leading: IconButton(
-          onPressed: () => context.go('/sign-in'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: _registered
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 48),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Cuenta creada para ${_fields['email']!.text.trim()}.',
-                          ),
-                          const Text(
-                            'Te enviamos un correo para confirmarla. Abre el '
-                            'enlace antes de iniciar sesión.',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: () => context.go('/sign-in'),
-                            child: const Text('Ir a iniciar sesión'),
-                          ),
-                        ],
-                      )
-                    : Form(
-                        key: _formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _field(
-                              'username',
-                              'Usuario',
-                              RegistrationValidators.username,
-                              maxLength: 50,
-                            ),
-                            _field(
-                              'firstName',
-                              'Nombres',
-                              RegistrationValidators.name,
-                              maxLength: 20,
-                              inputFormatters: names,
-                            ),
-                            _field(
-                              'lastName',
-                              'Apellidos',
-                              RegistrationValidators.name,
-                              maxLength: 20,
-                              inputFormatters: names,
-                            ),
-                            _field(
-                              'phone',
-                              'Teléfono',
-                              RegistrationValidators.phone,
-                              maxLength: 9,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                            ),
-                            _field(
-                              'age',
-                              'Edad',
-                              RegistrationValidators.age,
-                              maxLength: 3,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                TextInputFormatter.withFunction(
-                                  (oldValue, newValue) =>
-                                      RegExp(r'^[0-9]{0,3}$')
-                                          .hasMatch(newValue.text)
-                                      ? newValue
-                                      : oldValue,
-                                ),
-                              ],
-                            ),
-                            _field(
-                              'email',
-                              'Correo electrónico',
-                              RegistrationValidators.email,
-                              maxLength: 254,
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                            DropdownButtonFormField<String>(
-                              key: const ValueKey('register-role'),
-                              initialValue: _role,
-                              decoration: const InputDecoration(
-                                labelText: 'Rol clínico',
-                              ),
-                              validator: RegistrationValidators.role,
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'ROLE_NURSE',
-                                  child: Text('Enfermería'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'ROLE_DOCTOR',
-                                  child: Text('Medicina'),
-                                ),
-                              ],
-                              onChanged: _submitting
-                                  ? null
-                                  : (value) {
-                                      if (value != null) {
-                                        setState(() => _role = value);
-                                      }
-                                    },
-                            ),
-                            const SizedBox(height: 16),
-                            _passwordField(confirmation: false),
-                            const Text(
-                              '12–20 caracteres, una mayúscula, un número y un símbolo.',
-                            ),
-                            const SizedBox(height: 12),
-                            _passwordField(confirmation: true),
-                            if (_error != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  _error!,
-                                  key: const ValueKey('register-error'),
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
-                              ),
-                            FilledButton(
-                              key: const ValueKey('register-submit'),
-                              onPressed: _submitting ? null : _submit,
-                              child: Text(
-                                _submitting ? 'Creando cuenta…' : 'Registrarme',
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => context.go('/sign-in'),
-                              child: const Text('Ya tengo cuenta'),
-                            ),
-                          ],
+    return AuthPage(
+      title: 'Crear cuenta clínica',
+      subtitle: 'Completa tus datos para solicitar acceso a NursePulse',
+      onBack: () => context.go('/sign-in'),
+      child: _registered
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle_outline, size: 48),
+                const SizedBox(height: 16),
+                Text('Cuenta creada para ${_fields['email']!.text.trim()}.'),
+                const Text(
+                  'Te enviamos un correo para confirmarla. Abre el '
+                  'enlace antes de iniciar sesión.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => context.go('/sign-in'),
+                  child: const Text('Ir a iniciar sesión'),
+                ),
+              ],
+            )
+          : Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _field(
+                    'username',
+                    'Usuario',
+                    RegistrationValidators.username,
+                    maxLength: 50,
+                  ),
+                  _field(
+                    'firstName',
+                    'Nombres',
+                    RegistrationValidators.name,
+                    maxLength: 20,
+                    inputFormatters: names,
+                  ),
+                  _field(
+                    'lastName',
+                    'Apellidos',
+                    RegistrationValidators.name,
+                    maxLength: 20,
+                    inputFormatters: names,
+                  ),
+                  _field(
+                    'phone',
+                    'Teléfono',
+                    RegistrationValidators.phone,
+                    maxLength: 9,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                  _field(
+                    'age',
+                    'Edad',
+                    RegistrationValidators.age,
+                    maxLength: 3,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      TextInputFormatter.withFunction(
+                        (oldValue, newValue) =>
+                            RegExp(r'^[0-9]{0,3}$').hasMatch(newValue.text)
+                            ? newValue
+                            : oldValue,
+                      ),
+                    ],
+                  ),
+                  _field(
+                    'email',
+                    'Correo electrónico',
+                    RegistrationValidators.email,
+                    maxLength: 254,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  DropdownButtonFormField<String>(
+                    key: const ValueKey('register-role'),
+                    initialValue: _role,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Rol clínico'),
+                    validator: RegistrationValidators.role,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'ROLE_NURSE',
+                        child: Text('Enfermería'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ROLE_DOCTOR',
+                        child: Text('Medicina'),
+                      ),
+                    ],
+                    onChanged: _submitting
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _role = value);
+                            }
+                          },
+                  ),
+                  const SizedBox(height: 16),
+                  _passwordField(confirmation: false),
+                  const Text(
+                    '12–20 caracteres, una mayúscula, un número y un símbolo.',
+                  ),
+                  const SizedBox(height: 12),
+                  _passwordField(confirmation: true),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _error!,
+                        key: const ValueKey('register-error'),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
+                    ),
+                  FilledButton(
+                    key: const ValueKey('register-submit'),
+                    onPressed: _submitting ? null : _submit,
+                    child: Text(
+                      _submitting ? 'Creando cuenta…' : 'Registrarme',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go('/sign-in'),
+                    child: const Text('Ya tengo cuenta'),
+                  ),
+                ],
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nurse_pulse_app/core/network/dio_client.dart';
 import 'package:nurse_pulse_app/core/router/app_router.dart';
+import 'package:nurse_pulse_app/core/theme/app_theme.dart';
 import 'package:nurse_pulse_app/features/iam/application/auth_notifier.dart';
 import 'package:nurse_pulse_app/features/iam/application/view_mode_notifier.dart';
 import 'package:nurse_pulse_app/features/iam/domain/user.dart';
@@ -46,6 +47,7 @@ void main() {
             UncontrolledProviderScope(
               container: container,
               child: MaterialApp.router(
+                theme: AppTheme.light(),
                 routerConfig: router,
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context)

@@ -86,6 +86,7 @@ class _ClinicalEventFormDialogState
     return PopScope(
       canPop: !blocked,
       child: AlertDialog(
+        scrollable: true,
         title: const Text('Registrar evento clínico'),
         content: SingleChildScrollView(
           child: Form(

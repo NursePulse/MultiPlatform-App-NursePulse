@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 /// space (the theme's AppBarTheme has elevation 0 and the same background as
 /// the scaffold, so it renders as blank space instead of a visible bar).
 class PageTitle extends StatelessWidget {
-  const PageTitle(this.title, {super.key});
+  const PageTitle(this.title, {super.key, this.subtitle});
 
   final String title;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,21 @@ class PageTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.headlineSmall),
+            if (subtitle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

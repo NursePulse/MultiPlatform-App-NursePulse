@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// NursePulse Material 3 theme, matched pixel-for-pixel against the Angular
-/// web app's actual rendered palette (grepped from src/app/**/*.css, not the
-/// unused `tailwind.config.js` "care-primary" indigo scale — the real brand
-/// color the web app renders everywhere is the teal below).
+/// Approved mobile identity. Clinical colors retain their web meaning.
 class AppTheme {
   AppTheme._();
 
@@ -11,18 +8,20 @@ class AppTheme {
   /// Angular app's CSS (buttons, eyebrows, active nav, SBAR letters, links).
   static const Color primary = Color(0xFF0F766E);
   static const Color primaryDark = Color(0xFF115E59);
+  static const Color evergreen = Color(0xFF123B37);
   static const Color primaryAlt = Color(0xFF0D9488);
   static const Color primarySurface = Color(0xFFE6FFFB);
 
   static const Color textPrimary = Color(0xFF1E293B);
-  static const Color textHeading = Color(0xFF111827);
-  static const Color textMuted = Color(0xFF64748B);
+  static const Color textHeading = Color(0xFF142C30);
+  static const Color textMuted = Color(0xFF53666F);
   static const Color textFaint = Color(0xFF94A3B8);
 
   static const Color surface = Color(0xFFF8FAFC);
   static const Color surfaceAlt = Color(0xFFF1F5F9);
-  static const Color border = Color(0xFFE5E7EB);
-  static const Color borderAlt = Color(0xFFCBD5E1);
+  // Fine, muted outlines: visible on white without harsh dark frames.
+  static const Color border = Color(0xFFB9CDCC);
+  static const Color borderAlt = Color(0xFF8CA5A5);
 
   // The Angular app has no dark mode, so there is only one theme here —
   // it always renders with this light, Angular-matched palette.
@@ -41,6 +40,7 @@ class AppTheme {
       surface: Colors.white,
       surfaceContainerHighest: surfaceAlt,
       onSurface: textPrimary,
+      outline: borderAlt,
       outlineVariant: border,
       error: ClinicalColors.dangerText,
     );
@@ -51,16 +51,36 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: surface,
-      fontFamily: 'Inter',
+      textTheme: ThemeData.light().textTheme
+          .apply(bodyColor: textPrimary, displayColor: textHeading)
+          .copyWith(
+            headlineSmall: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: textHeading,
+            ),
+            titleLarge: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: textHeading,
+            ),
+            titleMedium: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textHeading,
+            ),
+          ),
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
-        foregroundColor: scheme.onSurface,
+        backgroundColor: evergreen,
+        foregroundColor: Colors.white,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: scheme.surface,
+        clipBehavior: Clip.antiAlias,
+        margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: scheme.outlineVariant),
@@ -68,11 +88,33 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: borderAlt),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderAlt),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.error, width: 1.5),
+        ),
+        labelStyle: const TextStyle(color: textMuted),
+        floatingLabelStyle: const TextStyle(color: primary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -101,6 +143,37 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: scheme.primary),
       ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: border),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        constraints: BoxConstraints(maxWidth: 720),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          side: BorderSide(color: border),
+        ),
+        clipBehavior: Clip.antiAlias,
+      ),
+      dividerTheme: const DividerThemeData(color: border, thickness: 1),
+      listTileTheme: const ListTileThemeData(
+        iconColor: primary,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: scheme.surface,
         selectedIconTheme: IconThemeData(color: scheme.primary),
@@ -112,6 +185,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
         indicatorColor: primarySurface,
+        elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
@@ -126,10 +200,14 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceAlt,
-        labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+        labelStyle: const TextStyle(
+          color: textPrimary,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        side: BorderSide.none,
+        side: const BorderSide(color: border),
       ),
     );
   }

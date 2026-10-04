@@ -76,6 +76,7 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
     return PopScope(
       canPop: !blocked,
       child: AlertDialog(
+        scrollable: true,
         title: const Text('Registrar alerta'),
         content: SizedBox(
           width: 420,
