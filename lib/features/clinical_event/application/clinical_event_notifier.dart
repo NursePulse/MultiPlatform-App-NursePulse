@@ -187,7 +187,7 @@ final clinicalEventEffectsProvider = Provider<ClinicalEventEffects>((ref) {
       );
     },
     createAlert: (event, _) async {
-      await alerts.create(
+      final receipt = await alerts.create(
         patientId: event.patientId,
         type: AlertType.other,
         severity: event.isCritical
@@ -195,6 +195,12 @@ final clinicalEventEffectsProvider = Provider<ClinicalEventEffects>((ref) {
             : AlertSeverity.high,
         description: ClinicalEventRules.alertDescription(event),
       );
+      if (receipt.readError != null ||
+          ref.read(alertNotifierProvider).warning != null) {
+        throw const FormatException(
+          'Revisa el aviso en Alertas; no repitas el evento.',
+        );
+      }
     },
   );
 });

@@ -102,14 +102,9 @@ class ReportNotifier extends StateNotifier<ReportState> {
         .where((s) => s.transferredAt == null || inRange(s.transferredAt!))
         .length;
     final auditInRange = auditLogs.where((a) => inRange(a.performedAt)).length;
-    // AlertResource has no triggeredAt/createdAt field on the backend at
-    // all, so Alert.triggeredAt is always a client-side fallback (attendedAt
-    // ?? closedAt ?? DateTime.now() — see alert.dart), never a real trigger
-    // time. Filtering by it would silently exclude/include alerts based on
-    // that synthetic value instead of the period the user picked. Mirrors
-    // report.store.ts, which hits the same missing-field gap and — since the
-    // raw API field is always absent — ends up counting every alert
-    // regardless of period rather than filtering by a fabricated date.
+    // Se conserva el conteo global de alertas de la referencia web.
+    // La fase Reportes revisará el filtro por triggeredAt real (o ausente)
+    // sin inventar fechas para los registros que no lo tengan.
     final alertsInRange = alerts;
     final activeAlerts = alertsInRange
         .where((a) => a.status != AlertStatus.closed)
