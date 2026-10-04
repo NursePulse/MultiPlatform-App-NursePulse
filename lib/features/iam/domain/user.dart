@@ -4,11 +4,24 @@ const kRoleNurse = 'ROLE_NURSE';
 const _knownRoles = [kRoleAdmin, kRoleDoctor, kRoleNurse];
 
 class User {
-  const User({required this.id, required this.username, required this.roles});
+  const User({
+    required this.id,
+    required this.username,
+    required this.roles,
+    this.firstName = '',
+    this.lastName = '',
+  });
 
   final String id;
   final String username;
   final List<String> roles;
+  final String firstName;
+  final String lastName;
+
+  String get displayName =>
+      firstName.trim().isNotEmpty && lastName.trim().isNotEmpty
+      ? '${firstName.trim()} ${lastName.trim()}'
+      : username;
 
   factory User.fromJson(Map<String, dynamic> json) {
     final rawRoles = (json['roles'] as List<dynamic>? ?? [])
@@ -20,6 +33,8 @@ class User {
       id: json['id'].toString(),
       username: json['username'] as String,
       roles: List.unmodifiable(rawRoles),
+      firstName: json['firstName'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? '',
     );
   }
 
@@ -27,6 +42,8 @@ class User {
     'id': id,
     'username': username,
     'roles': roles,
+    'firstName': firstName,
+    'lastName': lastName,
   };
 
   String get primaryRole {
@@ -42,7 +59,6 @@ class User {
       required.any((role) => roles.contains(role));
 }
 
-/// Los permisos se comprueban con User.roles.
 enum ViewMode { admin, doctor, nurse, unknown }
 
 extension ViewModeX on ViewMode {
