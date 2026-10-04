@@ -26,13 +26,30 @@ flutter devices
 
 ## Ejecutar con la API existente
 
-`API_BASE_URL` debe incluir `/api/v1`. Para usar el despliegue configurado en la web:
+Por defecto la app usa el backend de producción
+(`https://backend-nursepulse-qfct.onrender.com/api/v1`), así que basta con:
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=https://backend-nursepulse-qfct.onrender.com/api/v1
+flutter run
 ```
 
-Si ejecutas el backend en tu equipo:
+Ten en cuenta que en ese modo los registros y los cambios se hacen sobre datos
+reales de producción, y que registrar una cuenta envía un correo de
+verificación: no podrás iniciar sesión hasta abrir el enlace.
+
+Si en Chrome (`flutter run -d chrome`) aparece "No se pudo conectar con el
+servidor", es CORS: el backend solo acepta los orígenes locales
+`http://localhost:4200` y los dominios de Vercel/Netlify. Fija el puerto:
+
+```powershell
+flutter run -d chrome --web-port=4200
+```
+
+La aplicación en Android o iOS no depende de CORS.
+
+### Usar un backend local
+
+`API_BASE_URL` debe incluir `/api/v1`. Si ejecutas el backend en tu equipo:
 
 | Destino | URL local |
 | --- | --- |

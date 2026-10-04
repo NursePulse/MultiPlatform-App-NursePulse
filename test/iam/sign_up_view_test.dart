@@ -114,7 +114,13 @@ void main() {
 
     pending.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Ahora puedes iniciar sesión.'), findsOneWidget);
+    expect(
+      find.text(
+        'Te enviamos un correo para confirmarla. Abre el enlace antes de '
+        'iniciar sesión.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('HTTP 400 muestra detalle real y conserva los datos', (

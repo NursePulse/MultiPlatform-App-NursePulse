@@ -221,7 +221,11 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                           Text(
                             'Cuenta creada para ${_fields['email']!.text.trim()}.',
                           ),
-                          const Text('Ahora puedes iniciar sesión.'),
+                          const Text(
+                            'Te enviamos un correo para confirmarla. Abre el '
+                            'enlace antes de iniciar sesión.',
+                            textAlign: TextAlign.center,
+                          ),
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed: () => context.go('/sign-in'),

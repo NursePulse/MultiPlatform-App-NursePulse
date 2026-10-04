@@ -48,7 +48,7 @@ final dioProvider = Provider<Dio>((ref) {
       baseUrl: AppConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'Accept-Language': 'es'},
     ),
   );
   dio.interceptors.add(_AuthInterceptor(ref.read(secureStoreProvider), ref));
