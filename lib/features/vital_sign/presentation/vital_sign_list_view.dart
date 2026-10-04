@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/list_page_body.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../patient/application/patient_notifier.dart';
 import '../../patient/domain/patient.dart';
@@ -82,8 +84,8 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
             )
           : null,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: ListPageBody(
+          header: [
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -160,69 +162,67 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                   'Registra un paciente para asociar signos vitales.',
                 ),
               ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refresh,
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                  itemCount: records.isEmpty ? 1 : records.length,
-                  itemBuilder: (context, index) {
-                    if (records.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Text(
-                          state.loading
-                              ? 'Cargando signos vitales…'
-                              : state.error != null
-                              ? 'No se pudo cargar el historial.'
-                              : state.records.isEmpty
-                              ? 'No hay signos vitales registrados.'
-                              : 'No hay coincidencias.',
-                        ),
-                      );
-                    }
-
-                    final s = records[index];
-                    final p = patients[s.patientId];
-
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p?.fullName ?? 'Paciente #${s.patientId}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            StatusChip(
-                              label: s.riskLabel,
-                              palette: _riskPalette(s.riskLevel),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              DateFormat('dd/MM/yyyy HH:mm')
-                                  .format(s.recordedAt.toLocal()),
-                            ),
-                            Text(
-                              'FC: ${s.heartRate} lpm · FR: ${s.respiratoryRate} rpm',
-                            ),
-                            Text('TA: ${s.systolic}/${s.diastolic} mmHg'),
-                            Text(
-                              'SpO₂: ${s.oxygenSaturation} % · '
-                              'Temperatura: ${s.temperature} °C',
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
           ],
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+              itemCount: records.isEmpty ? 1 : records.length,
+              itemBuilder: (context, index) {
+                if (records.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      state.loading
+                          ? 'Cargando signos vitales…'
+                          : state.error != null
+                          ? 'No se pudo cargar el historial.'
+                          : state.records.isEmpty
+                          ? 'No hay signos vitales registrados.'
+                          : 'No hay coincidencias.',
+                    ),
+                  );
+                }
+
+                final s = records[index];
+                final p = patients[s.patientId];
+
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p?.fullName ?? 'Paciente #${s.patientId}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        StatusChip(
+                          label: s.riskLabel,
+                          palette: _riskPalette(s.riskLevel),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          DateFormat('dd/MM/yyyy HH:mm')
+                              .format(s.recordedAt.toLocal()),
+                        ),
+                        Text(
+                          'FC: ${s.heartRate} lpm · FR: ${s.respiratoryRate} rpm',
+                        ),
+                        Text('TA: ${s.systolic}/${s.diastolic} mmHg'),
+                        Text(
+                          'SpO₂: ${s.oxygenSaturation} % · '
+                          'Temperatura: ${s.temperature} °C',
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );

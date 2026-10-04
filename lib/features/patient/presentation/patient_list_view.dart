@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/list_page_body.dart';
+import '../../../shared/widgets/status_chip.dart';
 
 import '../application/patient_notifier.dart';
 import '../domain/patient.dart';
@@ -115,8 +120,8 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
             )
           : null,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: ListPageBody(
+          header: [
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -168,108 +173,127 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                   ],
                 ),
               ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(patientNotifierProvider.notifier).load(),
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                  itemCount: patients.isEmpty ? 1 : patients.length,
-                  itemBuilder: (context, index) {
-                    if (patients.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Text(
-                          state.loading
-                              ? 'Cargando pacientes…'
-                              : state.error != null
-                              ? 'No se pudo cargar el listado.'
-                              : state.patients.isEmpty
-                              ? 'No hay pacientes registrados.'
-                              : 'No hay coincidencias.',
-                        ),
-                      );
-                    }
+          ],
+          child: RefreshIndicator(
+            onRefresh: () => ref.read(patientNotifierProvider.notifier).load(),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+              itemCount: patients.isEmpty ? 1 : patients.length,
+              itemBuilder: (context, index) {
+                if (patients.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      state.loading
+                          ? 'Cargando pacientes…'
+                          : state.error != null
+                          ? 'No se pudo cargar el listado.'
+                          : state.patients.isEmpty
+                          ? 'No hay pacientes registrados.'
+                          : 'No hay coincidencias.',
+                    ),
+                  );
+                }
 
-                    final p = patients[index];
+                final p = patients[index];
 
-                    return Card(
-                      child: InkWell(
-                        onTap: () =>
-                            context.push('/patients/${p.id}/monitoring'),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                return Card(
+                  child: InkWell(
+                    onTap: () => context.push('/patients/${p.id}/monitoring'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(child: Text(p.initials)),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      p.fullName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
-                                    ),
-                                  ),
-                                  if (permissions.update || permissions.delete)
-                                    PopupMenuButton<String>(
-                                      enabled: !state.saving,
-                                      onSelected: (action) =>
-                                          _action(p, action),
-                                      itemBuilder: (_) => [
-                                        if (permissions.update)
-                                          const PopupMenuItem(
-                                            value: 'edit',
-                                            child: Text('Editar'),
-                                          ),
-                                        if (permissions.update &&
-                                            p.status !=
-                                                PatientStatus.discharged)
-                                          const PopupMenuItem(
-                                            value: 'discharge',
-                                            child: Text('Dar de alta'),
-                                          ),
-                                        if (permissions.delete)
-                                          const PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text('Eliminar'),
-                                          ),
-                                      ],
-                                    ),
-                                ],
+                              CircleAvatar(
+                                backgroundColor: AppTheme.primarySurface,
+                                foregroundColor: AppTheme.primaryDark,
+                                child: Text(p.initials),
                               ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  Chip(label: Text(p.statusLabel)),
-                                  Chip(
-                                    label: Text(
-                                      'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  p.fullName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
+                                ),
                               ),
-                              Text(
-                                '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
-                              ),
-                              const SizedBox(height: 4),
-                              Text(p.diagnosis),
+                              if (permissions.update || permissions.delete)
+                                PopupMenuButton<String>(
+                                  enabled: !state.saving,
+                                  onSelected: (action) => _action(p, action),
+                                  itemBuilder: (_) => [
+                                    if (permissions.update)
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('Editar'),
+                                      ),
+                                    if (permissions.update &&
+                                        p.status != PatientStatus.discharged)
+                                      const PopupMenuItem(
+                                        value: 'discharge',
+                                        child: Text('Dar de alta'),
+                                      ),
+                                    if (permissions.delete)
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('Eliminar'),
+                                      ),
+                                  ],
+                                ),
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              StatusChip(
+                                label: p.statusLabel,
+                                palette: ClinicalColors.patientStatus(
+                                  p.statusLabel,
+                                ),
+                              ),
+                              Chip(
+                                label: Text(
+                                  'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p.diagnosis,
+                                  style: const TextStyle(
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: AppTheme.primary,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ],
+          ),
         ),
       ),
     );

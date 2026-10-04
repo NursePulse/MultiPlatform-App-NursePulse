@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/page_title.dart';
+import '../../../shared/widgets/responsive_panels.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../audit/domain/audit_log.dart';
 import '../../iam/domain/user.dart';
@@ -101,9 +102,14 @@ class DashboardView extends ConsumerWidget {
                       const SizedBox(height: 16),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final columns = constraints.maxWidth >= 700
-                              ? 3
-                              : constraints.maxWidth >= 340
+                          final textScale =
+                              MediaQuery.textScalerOf(context).scale(14) / 14;
+                          final columns =
+                              constraints.maxWidth >= 900 && textScale < 1.5
+                              ? 4
+                              : constraints.maxWidth >= 700
+                              ? 2
+                              : constraints.maxWidth >= 340 && textScale < 1.5
                               ? 2
                               : 1;
                           final width =
@@ -158,39 +164,75 @@ class DashboardView extends ConsumerWidget {
                               Icons.monitor_heart_rounded,
                             ),
                           ];
-                          return Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
+                          final cards = [
+                            for (final metric in metrics)
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        metric.$3,
+                                        color: switch (metric.$1) {
+                                          'Alertas críticas' =>
+                                            ClinicalColors
+                                                .riskCritical
+                                                .foreground,
+                                          'Alertas moderadas' =>
+                                            ClinicalColors
+                                                .riskMedium
+                                                .foreground,
+                                          'Pacientes prioritarios' =>
+                                            ClinicalColors.riskHigh.foreground,
+                                          _ => AppTheme.primary,
+                                        },
+                                      ),
+                                      Text(
+                                        metric.$2?.toString() ?? '—',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium,
+                                      ),
+                                      Text(
+                                        metric.$1,
+                                        key: ValueKey('metric-${metric.$1}'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ];
+                          return Column(
                             children: [
-                              for (final metric in metrics)
-                                SizedBox(
-                                  width: width,
-                                  child: Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            metric.$3,
-                                            color: AppTheme.primary,
-                                          ),
-                                          Text(
-                                            metric.$2?.toString() ?? '—',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headlineMedium,
-                                          ),
-                                          Text(
-                                            metric.$1,
-                                            key: ValueKey(
-                                              'metric-${metric.$1}',
-                                            ),
+                              for (
+                                var row = 0;
+                                row < cards.length;
+                                row += columns
+                              )
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        for (
+                                          var index = row;
+                                          index < row + columns &&
+                                              index < cards.length;
+                                          index++
+                                        ) ...[
+                                          if (index > row)
+                                            const SizedBox(width: 12),
+                                          SizedBox(
+                                            width: width,
+                                            child: cards[index],
                                           ),
                                         ],
-                                      ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -198,81 +240,104 @@ class DashboardView extends ConsumerWidget {
                           );
                         },
                       ),
-                      heading('Seguimiento de pacientes', '/patients'),
-                      if (data.patients.isEmpty)
-                        const Text('No hay pacientes registrados.'),
-                      for (final patient in data.patients.take(5))
-                        Card(
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              child: Text(patient.initials),
-                            ),
-                            title: Text(patient.fullName),
-                            subtitle: Text(
-                              '${patient.code} · ${patient.statusLabel}\nHab. ${patient.roomNumber} / Cama ${patient.bedNumber}\n${patient.diagnosis}',
-                            ),
-                            isThreeLine: true,
-                            onTap:
-                                DashboardRules.canNavigate(
-                                  user,
-                                  '/patients/${patient.id}/monitoring',
-                                )
-                                ? () => _go(
-                                    context,
-                                    user,
-                                    '/patients/${patient.id}/monitoring',
-                                  )
-                                : null,
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ),
-                      heading('Alertas activas recientes', '/alerts'),
-                      if (!data.alerts.any((a) => a.isActive))
-                        const Text('No hay alertas activas.'),
-                      for (final alert
-                          in data.alerts.where((a) => a.isActive).take(5))
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  data.patients
-                                          .where((p) => p.id == alert.patientId)
-                                          .firstOrNull
-                                          ?.fullName ??
-                                      'Paciente #${alert.patientId}',
-                                ),
-                                Text(alert.title),
-                                Text(alert.description),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    StatusChip(
-                                      label: alert.severityLabel,
-                                      palette: alert.isCritical
-                                          ? ClinicalColors.riskCritical
-                                          : ClinicalColors.riskMedium,
+                      ResponsivePanels(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              heading('Seguimiento de pacientes', '/patients'),
+                              if (data.patients.isEmpty)
+                                const Text('No hay pacientes registrados.'),
+                              for (final patient in data.patients.take(5))
+                                Card(
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: AppTheme.primarySurface,
+                                      foregroundColor: AppTheme.primaryDark,
+                                      child: Text(patient.initials),
                                     ),
-                                    StatusChip(
-                                      label: alert.statusLabel,
-                                      palette: ClinicalColors.alertStatus(
-                                        alert.status.wireValue,
-                                      ),
+                                    title: Text(patient.fullName),
+                                    subtitle: Text(
+                                      '${patient.code} · ${patient.statusLabel}\nHab. ${patient.roomNumber} / Cama ${patient.bedNumber}\n${patient.diagnosis}',
                                     ),
-                                  ],
+                                    isThreeLine: true,
+                                    onTap:
+                                        DashboardRules.canNavigate(
+                                          user,
+                                          '/patients/${patient.id}/monitoring',
+                                        )
+                                        ? () => _go(
+                                            context,
+                                            user,
+                                            '/patients/${patient.id}/monitoring',
+                                          )
+                                        : null,
+                                    trailing: const Icon(Icons.chevron_right),
+                                  ),
                                 ),
-                                Text(
-                                  alert.triggeredAt == null
-                                      ? 'Generada: sin información'
-                                      : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                        ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              heading('Alertas activas recientes', '/alerts'),
+                              if (!data.alerts.any((a) => a.isActive))
+                                const Text('No hay alertas activas.'),
+                              for (final alert
+                                  in data.alerts
+                                      .where((a) => a.isActive)
+                                      .take(5))
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          data.patients
+                                                  .where(
+                                                    (p) =>
+                                                        p.id == alert.patientId,
+                                                  )
+                                                  .firstOrNull
+                                                  ?.fullName ??
+                                              'Paciente #${alert.patientId}',
+                                        ),
+                                        Text(alert.title),
+                                        Text(alert.description),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: [
+                                            StatusChip(
+                                              label: alert.severityLabel,
+                                              palette: alert.isCritical
+                                                  ? ClinicalColors.riskCritical
+                                                  : ClinicalColors.riskMedium,
+                                            ),
+                                            StatusChip(
+                                              label: alert.statusLabel,
+                                              palette:
+                                                  ClinicalColors.alertStatus(
+                                                    alert.status.wireValue,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          alert.triggeredAt == null
+                                              ? 'Generada: sin información'
+                                              : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                       if (isAdmin) ...[
                         heading('Auditoría reciente', '/audit'),
                         if (data.auditError != null)

@@ -123,6 +123,7 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
     return PopScope(
       canPop: !blocked,
       child: AlertDialog(
+        scrollable: true,
         title: const Text('Nuevo traspaso SBAR'),
         content: SizedBox(
           width: 420,
