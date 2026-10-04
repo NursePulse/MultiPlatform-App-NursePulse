@@ -42,7 +42,11 @@ class AuditNotifier extends StateNotifier<AuditState> {
   final AuditApi _api;
 
   Future<void> load() async {
-    state = state.copyWith(loading: true, error: null, clearSelectedPatientId: true);
+    state = state.copyWith(
+      loading: true,
+      error: null,
+      clearSelectedPatientId: true,
+    );
     try {
       final logs = await _api.getAll();
       // The all-patients feed has no guaranteed order from the backend;

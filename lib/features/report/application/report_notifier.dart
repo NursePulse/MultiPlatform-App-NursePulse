@@ -16,7 +16,11 @@ import '../domain/report.dart';
 import '../infrastructure/report_api.dart';
 
 class ReportState {
-  const ReportState({this.reports = const [], this.loading = false, this.error});
+  const ReportState({
+    this.reports = const [],
+    this.loading = false,
+    this.error,
+  });
 
   final List<Report> reports;
   final bool loading;
@@ -90,18 +94,14 @@ class ReportNotifier extends StateNotifier<ReportState> {
     bool inRange(DateTime value) =>
         !value.isBefore(startDate) && !value.isAfter(endDate);
 
-    final vitalsInRange = vitalSigns
-        .where((v) => inRange(v.recordedAt))
-        .length;
+    final vitalsInRange = vitalSigns.where((v) => inRange(v.recordedAt)).length;
     final eventsInRange = clinicalEvents
         .where((e) => inRange(e.occurredAt))
         .length;
     final sbarInRange = sbarTransfers
         .where((s) => s.transferredAt == null || inRange(s.transferredAt!))
         .length;
-    final auditInRange = auditLogs
-        .where((a) => inRange(a.performedAt))
-        .length;
+    final auditInRange = auditLogs.where((a) => inRange(a.performedAt)).length;
     // AlertResource has no triggeredAt/createdAt field on the backend at
     // all, so Alert.triggeredAt is always a client-side fallback (attendedAt
     // ?? closedAt ?? DateTime.now() — see alert.dart), never a real trigger
@@ -116,7 +116,8 @@ class ReportNotifier extends StateNotifier<ReportState> {
         .length;
     final criticalAlerts = alertsInRange
         .where(
-          (a) => a.severity == AlertSeverity.critical &&
+          (a) =>
+              a.severity == AlertSeverity.critical &&
               a.status != AlertStatus.closed,
         )
         .length;

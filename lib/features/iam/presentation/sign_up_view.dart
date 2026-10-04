@@ -129,7 +129,8 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                         ),
                         obscureText: true,
                         validator: (value) =>
-                            (value == null || !_passwordPolicyPattern.hasMatch(value))
+                            (value == null ||
+                                !_passwordPolicyPattern.hasMatch(value))
                             ? 'La contraseña debe tener entre 12 y 20 '
                                   'caracteres, con al menos una mayúscula y '
                                   'un carácter especial.'
@@ -149,8 +150,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                           labelText: 'Confirmar contraseña',
                         ),
                         obscureText: true,
-                        validator: (value) =>
-                            (value == null || value.isEmpty)
+                        validator: (value) => (value == null || value.isEmpty)
                             ? 'Requerido'
                             : null,
                       ),

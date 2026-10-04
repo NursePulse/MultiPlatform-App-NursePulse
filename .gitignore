@@ -46,4 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json

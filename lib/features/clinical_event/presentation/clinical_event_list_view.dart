@@ -82,9 +82,7 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                         ),
                         isThreeLine: true,
                         trailing: StatusChip(
-                          label: ClinicalEventSeverity.labelFor(
-                            event.severity,
-                          ),
+                          label: ClinicalEventSeverity.labelFor(event.severity),
                           palette: _severityPalette(event.severity),
                         ),
                       ),
@@ -225,8 +223,7 @@ class _RegisterEventDialogState extends ConsumerState<_RegisterEventDialog> {
               TextFormField(
                 controller: _title,
                 decoration: const InputDecoration(labelText: 'Título'),
-                validator: (value) =>
-                    (value == null || value.trim().length < 4)
+                validator: (value) => (value == null || value.trim().length < 4)
                     ? 'Mínimo 4 caracteres'
                     : null,
               ),

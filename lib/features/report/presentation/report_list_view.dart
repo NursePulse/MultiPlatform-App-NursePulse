@@ -54,57 +54,59 @@ class _ReportListViewState extends ConsumerState<ReportListView> {
                 emptyMessage: 'Aún no generaste ningún reporte.',
                 onRetry: () => ref.read(reportNotifierProvider.notifier).load(),
                 builder: (context, s) => ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            itemCount: s.reports.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final report = s.reports[index];
-              final summary = report.summary;
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        report.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(
-                        '${ReportType.labelFor(report.type)} · '
-                        '${_dateFormat.format(report.startDate)} - '
-                        '${_dateFormat.format(report.endDate)} · '
-                        'por ${report.generatedBy}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (summary != null) ...[
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 16,
-                          runSpacing: 4,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  itemCount: s.reports.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final report = s.reports[index];
+                    final summary = report.summary;
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Pacientes: ${summary.patients}'),
-                            Text('Signos vitales: ${summary.vitalSigns}'),
-                            Text('Eventos: ${summary.clinicalEvents}'),
-                            Text('SBAR: ${summary.sbarTransfers}'),
-                            Text('Alertas activas: ${summary.activeAlerts}'),
-                            Text('Críticas: ${summary.criticalAlerts}'),
-                            Text('Auditorías: ${summary.auditLogs}'),
+                            Text(
+                              report.title,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              '${ReportType.labelFor(report.type)} · '
+                              '${_dateFormat.format(report.startDate)} - '
+                              '${_dateFormat.format(report.endDate)} · '
+                              'por ${report.generatedBy}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            if (summary != null) ...[
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 16,
+                                runSpacing: 4,
+                                children: [
+                                  Text('Pacientes: ${summary.patients}'),
+                                  Text('Signos vitales: ${summary.vitalSigns}'),
+                                  Text('Eventos: ${summary.clinicalEvents}'),
+                                  Text('SBAR: ${summary.sbarTransfers}'),
+                                  Text(
+                                    'Alertas activas: ${summary.activeAlerts}',
+                                  ),
+                                  Text('Críticas: ${summary.criticalAlerts}'),
+                                  Text('Auditorías: ${summary.auditLogs}'),
+                                ],
+                              ),
+                            ],
+                            if (report.clinicalConclusion != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                report.clinicalConclusion!,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
                           ],
                         ),
-                      ],
-                      if (report.clinicalConclusion != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          report.clinicalConclusion!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -216,9 +218,7 @@ class _GenerateReportDialogState extends ConsumerState<_GenerateReportDialog> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _pickDate(isStart: true),
-                      child: Text(
-                        'Desde ${_dateFormat.format(_startDate)}',
-                      ),
+                      child: Text('Desde ${_dateFormat.format(_startDate)}'),
                     ),
                   ),
                   const SizedBox(width: 8),
