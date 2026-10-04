@@ -11,13 +11,17 @@ class SubscriptionPlansView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPlanId = ref.watch(subscriptionNotifierProvider);
+    final state = ref.watch(subscriptionNotifierProvider);
+    final actor = ref.watch(subscriptionUserProvider);
+    final allowed = actor != null && actor.hasKnownRole;
     final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
       body: Column(
         children: [
           const PageTitle('Suscripciones'),
+          if (state.loading || state.processing)
+            const LinearProgressIndicator(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -25,17 +29,55 @@ class SubscriptionPlansView extends ConsumerWidget {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
+                  const Text(
+                    'Simulación de suscripción. No se realizan cobros reales.',
+                  ),
+                  if (!allowed)
+                    const Text('Inicia sesión para seleccionar un plan.'),
+                  if (state.error != null) Text(state.error!),
+                  if (allowed &&
+                      state.error != null &&
+                      state.pendingPlan == null)
+                    TextButton(
+                      onPressed: state.loading || state.processing
+                          ? null
+                          : ref
+                                .read(subscriptionNotifierProvider.notifier)
+                                .load,
+                      child: const Text('Reintentar carga'),
+                    ),
+                  if (allowed && state.pendingPlan != null)
+                    TextButton(
+                      key: const ValueKey('subscription-save-pending'),
+                      onPressed: state.processing
+                          ? null
+                          : () async {
+                              try {
+                                await ref
+                                    .read(subscriptionNotifierProvider.notifier)
+                                    .selectPlan(state.pendingPlan!);
+                              } catch (_) {}
+                            },
+                      child: const Text('Guardar plan pendiente'),
+                    ),
                   for (final plan in kPlanCatalog)
                     SizedBox(
                       width: isWide ? 320 : double.infinity,
                       child: _PlanCard(
                         plan: plan,
-                        isCurrent: plan.id == currentPlanId,
+                        isCurrent: plan.id == state.planId,
+                        enabled:
+                            allowed &&
+                            !state.loading &&
+                            !state.processing &&
+                            state.pendingPlan == null,
                         onSelect: () async {
                           if (plan.monthlyPrice == 0) {
-                            ref
-                                .read(subscriptionNotifierProvider.notifier)
-                                .selectPlan(plan.id);
+                            try {
+                              await ref
+                                  .read(subscriptionNotifierProvider.notifier)
+                                  .selectPlan(plan.id);
+                            } catch (_) {}
                             return;
                           }
                           await showPaymentCheckoutSheet(context, plan);
@@ -56,11 +98,13 @@ class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.plan,
     required this.isCurrent,
+    required this.enabled,
     required this.onSelect,
   });
 
   final Plan plan;
   final bool isCurrent;
+  final bool enabled;
   final VoidCallback onSelect;
 
   @override
@@ -119,7 +163,8 @@ class _PlanCard extends StatelessWidget {
               ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: isCurrent ? null : onSelect,
+              key: ValueKey('subscription-select-${plan.id.name}'),
+              onPressed: isCurrent || !enabled ? null : onSelect,
               child: Text(isCurrent ? 'Plan actual' : 'Elegir plan'),
             ),
           ],

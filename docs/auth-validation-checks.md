@@ -1,5 +1,11 @@
 # Registro y acceso
 
+Estado actualizado, 2026-10-04: la implementación actual exige edad entera
+**18–90 inclusive**, según la indicación del usuario; no se aplica a Pacientes.
+La compatibilidad y los resultados siguientes son el registro histórico de
+esta fase. Las verificaciones completas actuales se documentan en
+[Reportes y suscripciones](reports-subscriptions-validation.md).
+
 Rama: feature/auth-validation, creada desde main después del PR #4.
 
 ## Alcance
