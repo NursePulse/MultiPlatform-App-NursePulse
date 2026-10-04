@@ -38,7 +38,7 @@ class SbarApi {
   Future<SbarTransfer> acknowledge(String id, {String? additionalNotes}) async {
     final response = await _dio.patch(
       '/handovers/$id/acknowledge',
-      data: {if (additionalNotes != null) 'additionalNotes': additionalNotes},
+      data: {'additionalNotes': ?additionalNotes},
     );
     return SbarTransfer.fromJson(response.data as Map<String, dynamic>);
   }

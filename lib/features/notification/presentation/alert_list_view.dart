@@ -144,8 +144,7 @@ class _CreateAlertDialog extends ConsumerStatefulWidget {
   final List<Patient> patients;
 
   @override
-  ConsumerState<_CreateAlertDialog> createState() =>
-      _CreateAlertDialogState();
+  ConsumerState<_CreateAlertDialog> createState() => _CreateAlertDialogState();
 }
 
 class _CreateAlertDialogState extends ConsumerState<_CreateAlertDialog> {
@@ -222,8 +221,7 @@ class _CreateAlertDialogState extends ConsumerState<_CreateAlertDialog> {
                       child: Text(AlertType.label(type)),
                     ),
                 ],
-                onChanged: (value) =>
-                    setState(() => _type = value ?? _type),
+                onChanged: (value) => setState(() => _type = value ?? _type),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<AlertSeverity>(

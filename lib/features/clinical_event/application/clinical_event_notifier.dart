@@ -28,7 +28,8 @@ class ClinicalEventState {
 }
 
 class ClinicalEventNotifier extends StateNotifier<ClinicalEventState> {
-  ClinicalEventNotifier(this._api, this._ref) : super(const ClinicalEventState());
+  ClinicalEventNotifier(this._api, this._ref)
+    : super(const ClinicalEventState());
 
   final ClinicalEventApi _api;
   final Ref _ref;

@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter: dependencias",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["pub", "get"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: analizar",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["analyze"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: pruebas",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["test"],
+      "problemMatcher": []
+    }
+  ]
+}
