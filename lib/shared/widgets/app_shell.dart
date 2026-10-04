@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/config/app_config.dart';
 import '../../features/iam/application/auth_notifier.dart';
-import '../../features/iam/application/view_mode_notifier.dart';
 import '../../features/iam/domain/user.dart';
 
 class _NavItem {
@@ -13,12 +12,10 @@ class _NavItem {
   final String path;
   final String label;
   final IconData icon;
+  final List<String>? visibleFor;
 
-  /// null means always visible.
-  final List<ViewMode>? visibleFor;
-
-  bool visible(ViewMode mode) =>
-      visibleFor == null || visibleFor!.contains(mode);
+  bool visible(User? user) =>
+      visibleFor == null || user?.hasAnyRole(visibleFor!) == true;
 }
 
 const _navItems = [
@@ -32,19 +29,19 @@ const _navItems = [
     '/reports',
     'Reportes',
     Icons.bar_chart_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin],
   ),
   _NavItem(
     '/audit',
     'Auditoría',
     Icons.fact_check_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin, kRoleDoctor],
   ),
   _NavItem(
     '/users',
     'Usuarios',
     Icons.admin_panel_settings_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin],
   ),
   _NavItem('/subscriptions', 'Suscripciones', Icons.workspace_premium_rounded),
 ];
@@ -64,9 +61,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final viewMode = ref.watch(viewModeProvider);
     final auth = ref.watch(authNotifierProvider);
-    final items = _navItems.where((item) => item.visible(viewMode)).toList();
+    final viewMode = ViewModeX.fromRole(auth.user?.primaryRole ?? '');
+    final items = _navItems.where((item) => item.visible(auth.user)).toList();
     final selectedIndex = items.indexWhere(
       (item) => widget.currentPath.startsWith(item.path),
     );

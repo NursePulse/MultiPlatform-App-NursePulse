@@ -53,7 +53,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     final state = ref.watch(alertNotifierProvider);
     final user = ref.watch(authNotifierProvider).user;
     final username = user?.username ?? '';
-    final canCloseAlerts = user?.hasAnyRole([kRoleHeadAdminNurse]) ?? false;
+    final canCloseAlerts = user?.hasAnyRole([kRoleAdmin, kRoleDoctor]) ?? false;
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context),
