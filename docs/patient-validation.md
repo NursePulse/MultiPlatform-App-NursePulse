@@ -1,5 +1,11 @@
 # Fase Pacientes
 
+Estado actualizado, 2026-10-04: **integrado en test** mediante PR #8,
+merge `c66ef0d`, incluido en la base actual `7179383` (PR #13).
+Las secciones de preparación y verificación siguientes son históricas;
+las regresiones actuales se registran en
+[Reportes y suscripciones](reports-subscriptions-validation.md).
+
 Base: test actualizado tras PR #7 (`4bb6b38`).
 Rama: feature/patient-validation.
 

@@ -1,5 +1,11 @@
 # Fase Eventos clínicos
 
+Estado actualizado, 2026-10-04: **integrado en test** mediante PR #9,
+merge `76236d6`, incluido en la base actual `7179383` (PR #13).
+El estado abierto del PR registrado más abajo corresponde a una consulta
+anterior. La fase vigente y las regresiones completas se documentan en
+[Reportes y suscripciones](reports-subscriptions-validation.md).
+
 ## Base y alcance
 
 Revisión y ejecución local: 2026-10-04.

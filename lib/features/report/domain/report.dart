@@ -1,5 +1,4 @@
-/// Backend keys (`ReportType` enum in `BackendNursePulse`) mapped to their
-/// Spanish display label.
+/// Tipos del reporte local, con etiquetas de la referencia web.
 class ReportType {
   ReportType._();
 
@@ -34,7 +33,7 @@ class ReportType {
   static String labelFor(String key) => _labels[key] ?? key;
 }
 
-/// Backend keys (`ReportStatus` enum) mapped to their Spanish label.
+/// Estado de la generación local; no representa un recurso del backend.
 class ReportStatus {
   ReportStatus._();
 
@@ -91,6 +90,9 @@ class ReportSummary {
     'criticalAlerts': criticalAlerts,
     'auditLogs': auditLogs,
   };
+
+  int get activityTotal =>
+      vitalSigns + clinicalEvents + sbarTransfers + activeAlerts + auditLogs;
 }
 
 class Report {
@@ -132,35 +134,17 @@ class Report {
         : null,
     clinicalConclusion: json['clinicalConclusion'] as String?,
   );
-}
-
-/// Payload for `POST /api/v1/reports` — the client aggregates the summary
-/// from live clinical data for the requested period; the backend only
-/// persists the result (mirrors CreateReportResource in the backend and
-/// GenerateReportRequest in the Angular app).
-class CreateReportCommand {
-  const CreateReportCommand({
-    required this.type,
-    required this.title,
-    required this.startDate,
-    required this.endDate,
-    required this.summary,
-    this.clinicalConclusion,
-  });
-
-  final String type;
-  final String title;
-  final DateTime startDate;
-  final DateTime endDate;
-  final ReportSummary summary;
-  final String? clinicalConclusion;
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'type': type,
     'title': title,
+    'generatedBy': generatedBy,
     'startDate': startDate.toUtc().toIso8601String(),
     'endDate': endDate.toUtc().toIso8601String(),
-    'summary': summary.toJson(),
+    'createdAt': createdAt.toUtc().toIso8601String(),
+    'status': status,
+    if (summary != null) 'summary': summary!.toJson(),
     if (clinicalConclusion != null) 'clinicalConclusion': clinicalConclusion,
   };
 }
