@@ -149,12 +149,11 @@ class VitalSign {
       riskLevel == RiskLevel.critical || riskLevel == RiskLevel.high;
 }
 
-/// Deliberately does not carry a nurse identity: the backend derives the
-/// responsible nurse from the authenticated JWT (mirrors
-/// record-vital-sign.request.ts in the Angular app).
+/// El contrato exige nurseId. El notifier lo obtiene de la sesión.
 class RecordVitalSignCommand {
   const RecordVitalSignCommand({
     required this.patientId,
+    required this.nurseId,
     required this.heartRate,
     required this.respiratoryRate,
     required this.systolicPressure,
@@ -164,6 +163,7 @@ class RecordVitalSignCommand {
   });
 
   final String patientId;
+  final String nurseId;
   final num heartRate;
   final num respiratoryRate;
   final num systolicPressure;
@@ -173,6 +173,7 @@ class RecordVitalSignCommand {
 
   Map<String, dynamic> toJson() => {
     'patientId': int.parse(patientId),
+    'nurseId': int.parse(nurseId),
     'heartRate': heartRate,
     'respiratoryRate': respiratoryRate,
     'systolicPressure': systolicPressure,

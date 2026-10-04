@@ -68,25 +68,36 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('La edad debe ser un número entero entre 18 y 120.'),
+      find.text('La edad debe ser un número entero entre 18 y 90.'),
       findsOneWidget,
     );
   });
 
   testWidgets('edad y confirmación inválidas bloquean la API', (tester) async {
     var calls = 0;
+
     await showForm(tester, (_) async {
       calls++;
     });
 
     await fillForm(tester);
-    await tester.enterText(field('age'), '17');
-    await submitForm(tester);
-    expect(calls, 0);
+
+    for (final age in ['17', '91', '120']) {
+      await tester.enterText(field('age'), age);
+      await submitForm(tester);
+
+      expect(calls, 0, reason: 'La edad $age debe bloquear el envío.');
+
+      expect(
+        find.text('La edad debe ser un número entero entre 18 y 90.'),
+        findsOneWidget,
+      );
+    }
 
     await tester.enterText(field('age'), '18');
     await tester.enterText(field('confirm'), 'TestPass123!y');
     await submitForm(tester);
+
     expect(calls, 0);
     expect(find.text('Las contraseñas deben coincidir.'), findsOneWidget);
   });

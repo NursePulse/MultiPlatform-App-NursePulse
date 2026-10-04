@@ -27,9 +27,9 @@ class RegistrationValidators {
     return RegExp(r'^[0-9]+$').hasMatch(text) &&
             number != null &&
             number >= 18 &&
-            number <= 120
+            number <= 90
         ? null
-        : 'La edad debe ser un número entero entre 18 y 120.';
+        : 'La edad debe ser un número entero entre 18 y 90.';
   }
 
   static String? email(String? value) {
