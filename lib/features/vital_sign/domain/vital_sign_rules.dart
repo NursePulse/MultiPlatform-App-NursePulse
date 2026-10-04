@@ -4,6 +4,9 @@ import 'vital_sign.dart';
 class VitalSignRules {
   VitalSignRules._();
 
+  static bool canRead(List<String> roles) =>
+      roles.any([kRoleNurse, kRoleDoctor, kRoleAdmin].contains);
+
   static bool canRecord(List<String> roles) =>
       roles.any([kRoleNurse, kRoleAdmin].contains);
 

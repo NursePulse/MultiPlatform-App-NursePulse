@@ -1,5 +1,11 @@
 # NursePulse: bases y plan de paridad móvil
 
+Estado actualizado, 2026-10-04: las fases hasta Reportes/suscripciones están
+integradas en `test` (PR #14, `9dfbb49`). Este inventario es histórico;
+los cambios y verificaciones de cierre se documentan en
+[Integración final](final-integration-validation.md). La mejora visual
+se realizará después de la validación funcional del APK.
+
 Revisión estática: 2026-10-03. Este documento fija el punto de partida;
 no acredita compilación, pruebas aprobadas ni funcionamiento contra la API desplegada.
 

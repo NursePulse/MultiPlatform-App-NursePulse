@@ -91,13 +91,22 @@ class SbarNotifier extends StateNotifier<SbarState> {
     final request = ++_loadId, revision = _revision;
     state = state.copyWith(loading: true, clearError: true);
     try {
-      if (!SbarRules.canRead(_user()?.roles ?? const [])) {
+      final actor = _user();
+      if (!SbarRules.canRead(actor?.roles ?? const [])) {
         throw const FormatException(
           'No tienes permiso para consultar traspasos.',
         );
       }
       // El controlador no expone GET /handovers: se agregan consultas por paciente.
       final patients = await _patients();
+      if (!mounted) return;
+      final current = _user();
+      if (current == null ||
+          current.id != actor!.id ||
+          current.username != actor.username ||
+          !SbarRules.canRead(current.roles)) {
+        throw const FormatException('La sesión cambió. Recarga los traspasos.');
+      }
       final groups = await Future.wait(
         patients.map((p) => _api.getByPatientId(p.id)),
       );
@@ -318,6 +327,7 @@ final sbarDetailProvider = FutureProvider.autoDispose
 final sbarNotifierProvider = StateNotifierProvider<SbarNotifier, SbarState>((
   ref,
 ) {
+  ref.watch(sbarUserProvider);
   final patients = ref.watch(patientApiProvider);
   final users = ref.watch(usersApiProvider);
   final auditApi = ref.watch(auditApiProvider);

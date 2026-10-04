@@ -70,6 +70,11 @@ class PatientNotifier extends StateNotifier<PatientState> {
     state = state.copyWith(loading: true, clearError: true);
 
     try {
+      if (!PatientPermissions(_roles()).read) {
+        throw const FormatException(
+          'No tienes permiso para consultar pacientes.',
+        );
+      }
       final patients = await _api.getAll();
 
       if (mounted && request == _loadId && revision == _revision) {
@@ -225,6 +230,7 @@ final patientPermissionsProvider = Provider(
 final patientDoctorsProvider = FutureProvider.autoDispose<List<String>>((
   ref,
 ) async {
+  ref.watch(authNotifierProvider.select((s) => s.user));
   final users = await ref.watch(usersApiProvider).getAll();
 
   final names =
@@ -239,8 +245,9 @@ final patientDoctorsProvider = FutureProvider.autoDispose<List<String>>((
 });
 
 final patientNotifierProvider =
-    StateNotifierProvider<PatientNotifier, PatientState>(
-      (ref) => PatientNotifier(
+    StateNotifierProvider<PatientNotifier, PatientState>((ref) {
+      ref.watch(authNotifierProvider.select((s) => s.user));
+      return PatientNotifier(
         ref.watch(patientApiProvider),
         () => ref.read(patientPermissionsProvider).roles,
         audit: (p, action) => registerAudit(
@@ -255,5 +262,5 @@ final patientNotifierProvider =
           ref.invalidate(patientHistoryProvider(id));
           ref.invalidate(dashboardNotifierProvider);
         },
-      ),
-    );
+      );
+    });

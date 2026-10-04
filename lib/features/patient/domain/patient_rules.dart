@@ -119,6 +119,8 @@ class PatientPermissions {
 
   final List<String> roles;
 
+  bool get read => roles.any([kRoleAdmin, kRoleDoctor, kRoleNurse].contains);
+
   bool get create => roles.any([kRoleAdmin, kRoleNurse].contains);
 
   bool get update => roles.any([kRoleAdmin, kRoleDoctor, kRoleNurse].contains);

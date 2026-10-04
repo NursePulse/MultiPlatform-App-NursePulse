@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nurse_pulse_app/features/iam/domain/user.dart';
 import 'package:nurse_pulse_app/features/patient/application/patient_notifier.dart';
 import 'package:nurse_pulse_app/features/patient/domain/patient.dart';
+import 'package:nurse_pulse_app/features/patient/domain/patient_rules.dart';
 import 'package:nurse_pulse_app/features/vital_sign/application/vital_sign_effects.dart';
 import 'package:nurse_pulse_app/features/vital_sign/application/vital_sign_notifier.dart';
 import 'package:nurse_pulse_app/features/vital_sign/domain/vital_sign.dart';
@@ -109,6 +110,9 @@ Future<void> host(
   final container = ProviderContainer(
     overrides: [
       patientApiProvider.overrideWithValue(patientApi),
+      patientPermissionsProvider.overrideWithValue(
+        PatientPermissions(actor.roles),
+      ),
       vitalSignUserProvider.overrideWithValue(actor),
       vitalSignNotifierProvider.overrideWith(
         (ref) => VitalSignNotifier(

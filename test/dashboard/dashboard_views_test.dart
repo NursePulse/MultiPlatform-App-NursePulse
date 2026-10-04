@@ -58,6 +58,38 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets(
+    'última actualización muestra auditoría real aunque alerta sea más nueva',
+    (tester) async {
+      final api = FakeDashboardApi()
+        ..snapshot = data(
+          audits: [audit(date: DateTime(2026, 10, 2, 9))],
+          alerts: [
+            alerts.alert(date: DateTime(2026, 10, 3, 20).toIso8601String()),
+          ],
+        );
+      await mount(tester, api, user: admin);
+      expect(
+        find.text('Última actualización: 02/10/2026 09:00'),
+        findsOneWidget,
+      );
+      expect(find.text('Última actualización: 04/10/2026 12:00'), findsNothing);
+    },
+  );
+
+  testWidgets('sin auditoría, última actualización muestra triggeredAt real', (
+    tester,
+  ) async {
+    final api = FakeDashboardApi()
+      ..snapshot = data(
+        alerts: [
+          alerts.alert(date: DateTime(2026, 10, 3, 20).toIso8601String()),
+        ],
+      );
+    await mount(tester, api);
+    expect(find.text('Última actualización: 03/10/2026 20:00'), findsOneWidget);
+  });
+
   testWidgets('Dashboard vacío muestra ceros reales y permite refrescar', (
     tester,
   ) async {
@@ -192,7 +224,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Pacientes monitoreados'), findsOneWidget);
-      expect(find.text('Última consulta: 04/10/2026 12:00'), findsOneWidget);
+      expect(
+        find.text('Última actualización: 04/10/2026 12:00'),
+        findsOneWidget,
+      );
     },
   );
 
