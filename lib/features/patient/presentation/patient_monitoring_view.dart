@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../clinical_event/domain/clinical_event.dart';
+import '../../iam/domain/user.dart';
 import '../application/patient_detail.dart';
 import '../application/patient_notifier.dart';
 import '../domain/patient_rules.dart';
+import '../domain/patient_monitoring_rules.dart';
 
 class PatientMonitoringView extends ConsumerStatefulWidget {
   const PatientMonitoringView({super.key, required this.patientId});
@@ -21,35 +23,62 @@ class PatientMonitoringView extends ConsumerStatefulWidget {
 class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
   DateTimeRange? _period;
 
+  String get _providerId {
+    try {
+      return PatientMonitoringRules.id(widget.patientId);
+    } on FormatException {
+      return widget.patientId;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PatientMonitoringView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.patientId != widget.patientId) _period = null;
+  }
+
   String _date(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
 
   String _time(DateTime date) =>
       DateFormat('dd/MM/yyyy HH:mm').format(date.toLocal());
 
   Future<void> _refresh() async {
-    final patient = ref.refresh(patientDetailProvider(widget.patientId).future);
-    final history = ref.refresh(
-      patientHistoryProvider(widget.patientId).future,
-    );
-
     try {
-      await Future.wait<Object>([patient, history]);
+      final patient = ref.refresh(patientDetailProvider(_providerId).future);
+      await patient;
+      if (!mounted) return;
+      ref.invalidate(patientHistoryProvider(_providerId));
+      await ref.read(patientHistoryProvider(_providerId).future);
     } catch (_) {
       // Cada proveedor muestra su error y permite reintentar.
     }
   }
 
   Future<void> _pickPeriod() async {
+    final today = ref.read(patientMonitoringClockProvider)();
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(1930),
-      lastDate: DateTime.now(),
+      lastDate: today,
+      currentDate: today,
       initialDateRange: _period,
       helpText: 'Periodo de signos y eventos',
       saveText: 'Aplicar',
     );
 
-    if (mounted && picked != null) setState(() => _period = picked);
+    if (mounted && picked != null) {
+      final error = PatientMonitoringRules.period(
+        picked.start,
+        picked.end,
+        today: today,
+      );
+      if (error != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error)));
+      } else {
+        setState(() => _period = picked);
+      }
+    }
   }
 
   Widget _error(Object error, VoidCallback retry) => Column(
@@ -114,6 +143,16 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
         ],
       ),
       _title('Signos vitales (${vitals.length})'),
+      TextButton(
+        onPressed: () => context.go('/vital-signs'),
+        child: Text(
+          ref
+                  .read(patientMonitoringRolesProvider)
+                  .any([kRoleNurse, kRoleAdmin].contains)
+              ? 'Registrar signos vitales'
+              : 'Ver signos vitales',
+        ),
+      ),
       if (vitals.isEmpty) const Text('No hay signos vitales en este periodo.'),
       for (final v in vitals)
         _card(_time(v.recordedAt), [
@@ -132,12 +171,23 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
           if (e.registeredBy.isNotEmpty) 'Registrado por: ${e.registeredBy}',
         ]),
       _title('Alertas (${history.alerts.length})'),
+      TextButton(
+        onPressed: () => context.go('/alerts'),
+        child: const Text('Ver todas las alertas'),
+      ),
       const Text('Las alertas se muestran sin filtro de fechas.'),
       if (history.alerts.isEmpty) const Text('No hay alertas registradas.'),
       for (final a in history.alerts)
         _card(a.title, [
           a.message,
           '${a.severityLabel} · ${a.statusLabel}',
+          a.triggeredAt == null
+              ? 'Generada: sin información'
+              : 'Generada: ${_time(a.triggeredAt!)}',
+          if (a.attendedBy != null) 'Atendida por: ${a.attendedBy}',
+          if (a.attendedAt != null) 'Atendida: ${_time(a.attendedAt!)}',
+          if (a.closedBy != null) 'Cerrada por: ${a.closedBy}',
+          if (a.closedAt != null) 'Cerrada: ${_time(a.closedAt!)}',
           if (a.resolutionNotes?.isNotEmpty == true)
             'Resolución: ${a.resolutionNotes}',
         ]),
@@ -146,8 +196,13 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
 
   @override
   Widget build(BuildContext context) {
-    final patient = ref.watch(patientDetailProvider(widget.patientId));
-    final history = ref.watch(patientHistoryProvider(widget.patientId));
+    final patient = ref.watch(patientDetailProvider(_providerId));
+    final allowed = PatientMonitoringRules.canRead(
+      ref.watch(patientMonitoringRolesProvider),
+    );
+    final history = allowed && patient.hasValue && !patient.hasError
+        ? ref.watch(patientHistoryProvider(_providerId))
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -168,44 +223,52 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           physics: const AlwaysScrollableScrollPhysics(),
-          children: patient.when(
-            loading: () => [const Center(child: CircularProgressIndicator())],
-            error: (error, _) => [
-              _error(
-                error,
-                () => ref.invalidate(patientDetailProvider(widget.patientId)),
-              ),
-            ],
-            data: (p) => [
-              Text(
-                p.fullName,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              _card('${p.code} · ${p.statusLabel}', [
-                'Documento: ${p.documentNumber} · ${p.age} años',
-                'Nacimiento: ${_date(p.birthDate)} · Ingreso: ${_date(p.admissionDate)}',
-                'Género: ${PatientRules.genders[p.gender] ?? p.gender}',
-                'Habitación: ${p.roomNumber} · Cama: ${p.bedNumber}',
-                'Médico tratante: ${p.attendingPhysician}',
-                'Diagnóstico: ${p.diagnosis}',
-              ]),
-              ...history.when(
-                loading: () => [
-                  const LinearProgressIndicator(),
-                  const Text('Cargando historial…'),
-                ],
-                error: (error, _) => [
-                  _error(
-                    error,
-                    () => ref.invalidate(
-                      patientHistoryProvider(widget.patientId),
-                    ),
+          children: !allowed
+              ? [
+                  const Text(
+                    'No tienes permiso para consultar el seguimiento del paciente.',
                   ),
-                ],
-                data: _history,
-              ),
-            ],
-          ),
+                ]
+              : patient.when(
+                  loading: () => [
+                    const Center(child: CircularProgressIndicator()),
+                  ],
+                  error: (error, _) => [
+                    _error(
+                      error,
+                      () => ref.invalidate(patientDetailProvider(_providerId)),
+                    ),
+                  ],
+                  data: (p) => [
+                    Text(
+                      p.fullName,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    _card('${p.code} · ${p.statusLabel}', [
+                      'Documento: ${p.documentNumber} · ${p.age} años',
+                      'Nacimiento: ${_date(p.birthDate)} · Ingreso: ${_date(p.admissionDate)}',
+                      'Género: ${PatientRules.genders[p.gender] ?? p.gender}',
+                      'Habitación: ${p.roomNumber} · Cama: ${p.bedNumber}',
+                      'Médico tratante: ${p.attendingPhysician}',
+                      'Diagnóstico: ${p.diagnosis}',
+                    ]),
+                    ...?history?.when(
+                      loading: () => [
+                        const LinearProgressIndicator(),
+                        const Text('Cargando historial…'),
+                      ],
+                      error: (error, _) => [
+                        _error(
+                          error,
+                          () => ref.invalidate(
+                            patientHistoryProvider(_providerId),
+                          ),
+                        ),
+                      ],
+                      data: _history,
+                    ),
+                  ],
+                ),
         ),
       ),
     );

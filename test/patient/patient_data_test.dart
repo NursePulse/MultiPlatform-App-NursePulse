@@ -54,7 +54,10 @@ void main() {
     );
 
     final container = ProviderContainer(
-      overrides: [dioProvider.overrideWithValue(dio)],
+      overrides: [
+        dioProvider.overrideWithValue(dio),
+        patientMonitoringRolesProvider.overrideWithValue([kRoleNurse]),
+      ],
     );
 
     final patientSub = container.listen(patientDetailProvider('7'), (_, _) {});
@@ -195,11 +198,13 @@ void main() {
           const User(id: '2', username: 'nurse.test', roles: [kRoleNurse]),
         ),
         vitalSignEffectsProvider.overrideWithValue(
+          // Los efectos y el historial usan sesiones clínicas simuladas.
           VitalSignEffects(
             audit: (_, _) async {},
             createAlert: (_, _) async {},
           ),
         ),
+        patientMonitoringRolesProvider.overrideWithValue([kRoleNurse]),
       ],
     );
 

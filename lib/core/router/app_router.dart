@@ -56,8 +56,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (loggingIn || location == '/') return '/dashboard';
 
       final requiredRoles = switch (location) {
-        '/audit' => [kRoleAdmin, kRoleDoctor],
-        '/users' || '/reports' => [kRoleAdmin],
+        '/audit' || '/reports' => [kRoleAdmin, kRoleDoctor],
+        '/users' => [kRoleAdmin],
         _ => <String>[],
       };
 

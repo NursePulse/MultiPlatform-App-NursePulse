@@ -257,6 +257,7 @@ void main() {
         overrides: [
           dioProvider.overrideWithValue(dio),
           alertUserProvider.overrideWithValue(doctor),
+          patientMonitoringRolesProvider.overrideWithValue(doctor.roles),
         ],
       );
       final history = container.listen(patientHistoryProvider('1'), (_, _) {});
