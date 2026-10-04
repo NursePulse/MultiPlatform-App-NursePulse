@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/session_events.dart';
 import '../../../core/storage/secure_store.dart';
+import '../domain/sign_up_request.dart';
 import '../domain/user.dart';
 import '../infrastructure/iam_api.dart';
 import 'view_mode_notifier.dart';
@@ -18,12 +19,10 @@ class AuthState {
   final User? user;
   final String? token;
   final bool loading;
-
-  /// True while the session is being restored from secure storage on app
-  /// start — the router waits for this before deciding where to send guests.
   final bool restoring;
 
-  bool get isAuthenticated => user != null && token != null;
+  bool get isAuthenticated =>
+      user?.hasKnownRole == true && token != null && token!.trim().isNotEmpty;
 
   AuthState copyWith({
     User? user,
@@ -35,6 +34,7 @@ class AuthState {
     if (clear) {
       return AuthState(loading: loading ?? false, restoring: false);
     }
+
     return AuthState(
       user: user ?? this.user,
       token: token ?? this.token,
@@ -62,18 +62,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final SecureStore _secureStore;
 
   Future<void> _restore() async {
-    final token = await _secureStore.readToken();
-    final userJson = await _secureStore.readUser();
-    if (token != null && userJson != null) {
-      final user = User.fromJson(userJson);
-      state = state.copyWith(user: user, token: token, restoring: false);
-      // The persisted view mode may be stale (e.g. an admin re-assigned this
-      // user's role in another session) — always resync it to the real role
-      // on restore, same as signIn() does.
-      final mode = ViewModeX.fromRole(user.primaryRole);
-      _ref.read(viewModeProvider.notifier).setMode(mode);
-    } else {
-      state = state.copyWith(restoring: false);
+    try {
+      final token = await _secureStore.readToken();
+      final userJson = await _secureStore.readUser();
+
+      if (!mounted) return;
+
+      if (token != null && token.trim().isNotEmpty && userJson != null) {
+        final user = User.fromJson(userJson);
+
+        if (!user.hasKnownRole) {
+          await _secureStore.clearSession();
+          if (mounted) state = state.copyWith(clear: true);
+          return;
+        }
+
+        state = state.copyWith(user: user, token: token, restoring: false);
+        final mode = ViewModeX.fromRole(user.primaryRole);
+        _ref.read(viewModeProvider.notifier).setMode(mode);
+      } else {
+        state = state.copyWith(restoring: false);
+      }
+    } catch (_) {
+      if (mounted) state = state.copyWith(clear: true);
     }
   }
 
@@ -81,15 +92,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String username,
     required String password,
   }) async {
+    if (state.loading) throw StateError('Ya hay una operación en curso.');
+
     state = state.copyWith(loading: true);
     try {
       final session = await _api.signIn(username: username, password: password);
+
       await _secureStore.saveSession(
         token: session.token,
         user: session.user.toJson(),
       );
+      if (!mounted) return;
+
       final mode = ViewModeX.fromRole(session.user.primaryRole);
       await _secureStore.saveViewMode(mode.storageValue);
+      if (!mounted) return;
+
       _ref.read(viewModeProvider.notifier).setMode(mode);
       state = state.copyWith(
         user: session.user,
@@ -97,22 +115,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
         loading: false,
       );
     } catch (_) {
-      state = state.copyWith(loading: false);
+      if (mounted) state = state.copyWith(loading: false);
       rethrow;
     }
   }
 
-  Future<void> signUp({
-    required String username,
-    required String password,
-    required String role,
-  }) async {
+  Future<void> signUp(SignUpRequest request) async {
+    if (state.loading) throw StateError('Ya hay una operación en curso.');
+
     state = state.copyWith(loading: true);
     try {
-      await _api.signUp(username: username, password: password, role: role);
-      state = state.copyWith(loading: false);
+      await _api.signUp(request);
+      if (mounted) state = state.copyWith(loading: false);
     } catch (_) {
-      state = state.copyWith(loading: false);
+      if (mounted) state = state.copyWith(loading: false);
       rethrow;
     }
   }
@@ -120,6 +136,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     await _secureStore.clearSession();
     await _secureStore.clearViewMode();
+    if (!mounted) return;
+
     _ref.read(viewModeProvider.notifier).setMode(ViewMode.nurse);
     state = state.copyWith(clear: true);
   }
@@ -130,3 +148,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(ref),
 );
+
+final registrationSubmitProvider =
+    Provider<Future<void> Function(SignUpRequest)>(
+      (ref) =>
+          (request) => ref.read(authNotifierProvider.notifier).signUp(request),
+    );

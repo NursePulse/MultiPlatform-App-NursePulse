@@ -8,10 +8,11 @@ import '../application/auth_notifier.dart';
 import '../application/users_notifier.dart';
 import '../domain/user.dart';
 
-const _allRoles = [kRoleNurse, kRoleHeadAdminNurse];
+const _allRoles = [kRoleNurse, kRoleDoctor, kRoleAdmin];
 
 String _roleLabel(String role) => switch (role) {
-  kRoleHeadAdminNurse => 'Jefe de Enfermería',
+  kRoleAdmin => 'Administrador',
+  kRoleDoctor => 'Medicina',
   _ => 'Enfermera/o',
 };
 
@@ -60,7 +61,9 @@ class _UserManagementViewState extends ConsumerState<UserManagementView> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(selected),
+              onPressed: _allRoles.contains(selected)
+                  ? () => Navigator.of(context).pop(selected)
+                  : null,
               child: const Text('Aplicar'),
             ),
           ],

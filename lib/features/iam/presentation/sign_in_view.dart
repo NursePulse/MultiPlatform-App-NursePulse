@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../domain/sign_up_request.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/network/api_exception.dart';
 import '../application/auth_notifier.dart';
@@ -28,11 +29,14 @@ class _SignInViewState extends ConsumerState<SignInView> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _submitting = true;
       _error = null;
     });
+
     try {
       await ref
           .read(authNotifierProvider.notifier)
@@ -41,7 +45,11 @@ class _SignInViewState extends ConsumerState<SignInView> {
             password: _passwordController.text,
           );
     } catch (e) {
-      setState(() => _error = describeDioError(e));
+      if (mounted) {
+        setState(
+          () => _error = e is FormatException ? e.message : describeDioError(e),
+        );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -60,6 +68,7 @@ class _SignInViewState extends ConsumerState<SignInView> {
                 padding: const EdgeInsets.all(28),
                 child: Form(
                   key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,24 +93,25 @@ class _SignInViewState extends ConsumerState<SignInView> {
                       const SizedBox(height: 24),
                       TextFormField(
                         controller: _usernameController,
+                        enabled: !_submitting,
+                        maxLength: 50,
                         decoration: const InputDecoration(labelText: 'Usuario'),
                         textInputAction: TextInputAction.next,
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Ingresa tu usuario'
-                            : null,
+                        validator: RegistrationValidators.username,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _passwordController,
+                        enabled: !_submitting,
+                        maxLength: 72,
+                        enableSuggestions: false,
+                        autocorrect: false,
                         decoration: const InputDecoration(
                           labelText: 'Contraseña',
                         ),
                         obscureText: true,
                         onFieldSubmitted: (_) => _submit(),
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Ingresa tu contraseña'
-                            : null,
+                        validator: RegistrationValidators.signInPassword,
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),

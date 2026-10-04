@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/sign_up_request.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/user.dart';
 
@@ -15,7 +16,6 @@ class AuthenticationApi {
   AuthenticationApi(this._dio);
 
   final Dio _dio;
-
   Future<AuthenticatedSession> signIn({
     required String username,
     required String password,
@@ -24,23 +24,24 @@ class AuthenticationApi {
       '/authentication/sign-in',
       data: {'username': username, 'password': password},
     );
+
     final json = response.data as Map<String, dynamic>;
-    return AuthenticatedSession(
-      user: User.fromJson(json),
-      token: json['token'] as String,
-    );
+    final user = User.fromJson(json);
+    final token = json['token'];
+
+    if (!user.hasKnownRole || token is! String || token.trim().isEmpty) {
+      throw const FormatException(
+        'La respuesta no contiene una sesión válida.',
+      );
+    }
+
+    return AuthenticatedSession(user: user, token: token);
   }
 
-  /// Returns the newly created user. Does NOT open a session — the backend
-  /// sign-up endpoint returns no token, mirroring auth.store.ts's signUp().
-  Future<User> signUp({
-    required String username,
-    required String password,
-    required String role,
-  }) async {
+  Future<User> signUp(SignUpRequest request) async {
     final response = await _dio.post(
       '/authentication/sign-up',
-      data: {'username': username, 'password': password, 'role': role},
+      data: request.toJson(),
     );
     return User.fromJson(response.data as Map<String, dynamic>);
   }
