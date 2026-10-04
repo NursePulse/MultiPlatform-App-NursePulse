@@ -92,7 +92,7 @@ class DashboardView extends ConsumerWidget {
                       retry(state.error!, 'dashboard-retry'),
                     if (summary != null && data != null) ...[
                       Text(
-                        'Última consulta: ${DateFormat('dd/MM/yyyy HH:mm').format(summary.lastUpdate.toLocal())}',
+                        'Última actualización: ${DateFormat('dd/MM/yyyy HH:mm').format(summary.lastUpdate.toLocal())}',
                       ),
                       if (state.error != null)
                         const Text(

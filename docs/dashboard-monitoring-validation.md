@@ -1,5 +1,12 @@
 # Dashboard y monitoreo
 
+Estado actualizado, 2026-10-04: Dashboard está integrado en `test` desde el
+PR #12. Reportes quedó integrado por PR #14 y ya usa almacenamiento local.
+La fecha de actualización y el aislamiento de sesiones se revisan en
+[Integración final](final-integration-validation.md). El contador móvil
+conserva el perfil autenticado, con la diferencia visual documentada allí.
+Las secciones siguientes registran la implementación y resultados históricos.
+
 Fecha: 2026-10-04. Rama: `feature/dashboard-monitoring-validation`.
 Base: `test` remoto `e22c79c`, después del merge de Alertas (PR #11).
 Se comprobó que el commit de Alertas `bc77e29` está incluido en esa base.

@@ -170,4 +170,62 @@ void main() {
       expect(sorted.last.triggeredAt, isNull);
     },
   );
+
+  test(
+    'última actualización prioriza auditoría incluso ante alerta más nueva',
+    () {
+      final auditDate = DateTime(2026, 10, 2, 9).toUtc();
+      final alertDate = DateTime(2026, 10, 3, 20).toUtc();
+      final summary = DashboardRules.summarize(
+        data(
+          audits: [audit(date: auditDate)],
+          alerts: [alerts.alert(date: alertDate.toIso8601String())],
+        ),
+        now,
+      );
+      expect(summary.lastUpdate, auditDate);
+    },
+  );
+
+  for (final logs in [null, <dynamic>[]]) {
+    test(
+      'auditoría ${logs == null ? 'ausente' : 'vacía'} usa fecha de alerta, incluso cerrada',
+      () {
+        final alertDate = DateTime(2026, 10, 3, 20).toUtc();
+        final summary = DashboardRules.summarize(
+          data(
+            audits: logs == null ? null : [],
+            alerts: [
+              alerts.alert(status: 'CLOSED', date: alertDate.toIso8601String()),
+            ],
+          ),
+          now,
+        );
+        expect(summary.lastUpdate, alertDate);
+        expect(summary.activeAlerts, 0);
+      },
+    );
+  }
+
+  test('alerta sin fecha y sin auditoría usa reloj de consulta, como web', () {
+    final summary = DashboardRules.summarize(
+      data(alerts: [alerts.alert(date: null)]),
+      now,
+    );
+    expect(summary.lastUpdate, now);
+  });
+
+  test(
+    'fecha de signos/eventos no reemplaza auditoría o alertas en actualización',
+    () {
+      final summary = DashboardRules.summarize(
+        data(
+          events: [event(date: now.add(const Duration(days: 1)))],
+          vitals: [vital(date: now.add(const Duration(days: 1)))],
+        ),
+        now,
+      );
+      expect(summary.lastUpdate, now);
+    },
+  );
 }

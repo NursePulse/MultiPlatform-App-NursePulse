@@ -206,8 +206,9 @@ final clinicalEventEffectsProvider = Provider<ClinicalEventEffects>((ref) {
   );
 });
 final clinicalEventNotifierProvider =
-    StateNotifierProvider<ClinicalEventNotifier, ClinicalEventState>(
-      (ref) => ClinicalEventNotifier(
+    StateNotifierProvider<ClinicalEventNotifier, ClinicalEventState>((ref) {
+      ref.watch(clinicalEventUserProvider);
+      return ClinicalEventNotifier(
         ref.watch(clinicalEventApiProvider),
         () => ref.read(clinicalEventUserProvider),
         ref.watch(patientApiProvider).getById,
@@ -216,5 +217,5 @@ final clinicalEventNotifierProvider =
           ref.invalidate(patientHistoryProvider(event.patientId));
           ref.invalidate(dashboardNotifierProvider);
         },
-      ),
-    );
+      );
+    });

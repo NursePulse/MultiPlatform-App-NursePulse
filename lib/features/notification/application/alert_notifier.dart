@@ -97,10 +97,13 @@ class AlertNotifier extends StateNotifier<AlertState> {
   }
 
   void _checkSession(User actor, {bool closing = false}) {
+    if (!mounted) {
+      throw const FormatException(
+        'La sesión cambió. Inicia la operación de nuevo.',
+      );
+    }
     final current = _actor(closing: closing);
-    if (!mounted ||
-        actor.id != current.id ||
-        actor.username != current.username) {
+    if (actor.id != current.id || actor.username != current.username) {
       throw const FormatException(
         'La sesión cambió. Inicia la operación de nuevo.',
       );
@@ -307,6 +310,7 @@ final alertDetailProvider = FutureProvider.autoDispose.family<Alert, String>((
   ref,
   id,
 ) {
+  ref.watch(alertUserProvider);
   if (!ref.watch(alertCanManageProvider)) {
     throw const FormatException('No tienes permiso para consultar alertas.');
   }
@@ -317,6 +321,7 @@ final alertDetailProvider = FutureProvider.autoDispose.family<Alert, String>((
 final alertNotifierProvider = StateNotifierProvider<AlertNotifier, AlertState>((
   ref,
 ) {
+  ref.watch(alertUserProvider);
   final auditApi = ref.watch(auditApiProvider);
   return AlertNotifier(
     ref.watch(alertApiProvider),

@@ -34,6 +34,7 @@ final patientMonitoringClockProvider = Provider<DateTime Function()>(
 );
 
 String _validate(Ref ref, String id) {
+  ref.watch(authNotifierProvider.select((s) => s.user));
   if (!PatientMonitoringRules.canRead(
     ref.watch(patientMonitoringRolesProvider),
   )) {

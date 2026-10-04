@@ -78,6 +78,11 @@ class VitalSignNotifier extends StateNotifier<VitalSignState> {
     state = state.copyWith(loading: true, clearError: true);
 
     try {
+      if (!VitalSignRules.canRead(_user()?.roles ?? const [])) {
+        throw const FormatException(
+          'No tienes permiso para consultar signos vitales.',
+        );
+      }
       final signs = await _api.getAll();
 
       if (mounted && request == _loadId && revision == _revision) {
@@ -94,7 +99,16 @@ class VitalSignNotifier extends StateNotifier<VitalSignState> {
     }
   }
 
-  Future<List<VitalSign>> loadForPatient(String id) => _api.getByPatientId(id);
+  Future<List<VitalSign>> loadForPatient(String id) {
+    if (!VitalSignRules.canRead(_user()?.roles ?? const [])) {
+      throw const FormatException(
+        'No tienes permiso para consultar signos vitales.',
+      );
+    }
+    final error = VitalSignRules.id(id);
+    if (error != null) throw FormatException(error);
+    return _api.getByPatientId(int.parse(id.trim()).toString());
+  }
 
   void clearWarning() => state = state.copyWith(clearWarning: true);
 
@@ -213,8 +227,9 @@ final vitalSignEffectsProvider = Provider<VitalSignEffects>((ref) {
 });
 
 final vitalSignNotifierProvider =
-    StateNotifierProvider<VitalSignNotifier, VitalSignState>(
-      (ref) => VitalSignNotifier(
+    StateNotifierProvider<VitalSignNotifier, VitalSignState>((ref) {
+      ref.watch(vitalSignUserProvider);
+      return VitalSignNotifier(
         ref.watch(vitalSignApiProvider),
         () => ref.read(vitalSignUserProvider),
         ref.watch(patientApiProvider).getById,
@@ -223,5 +238,5 @@ final vitalSignNotifierProvider =
           ref.invalidate(patientHistoryProvider(sign.patientId));
           ref.invalidate(dashboardNotifierProvider);
         },
-      ),
-    );
+      );
+    });

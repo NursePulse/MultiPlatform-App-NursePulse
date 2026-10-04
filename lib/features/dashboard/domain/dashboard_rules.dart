@@ -98,8 +98,11 @@ class DashboardRules {
           .where((v) => month(v.recordedAt))
           .length,
       auditMovements: data.audits?.length,
-      // Hora de la consulta completada; no sustituye fechas de registros clínicos.
-      lastUpdate: now,
+      // La web prioriza auditoría, luego alertas y finalmente la hora actual.
+      lastUpdate:
+          data.audits?.firstOrNull?.performedAt ??
+          data.alerts.firstOrNull?.triggeredAt ??
+          now,
     );
   }
 }
