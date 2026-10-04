@@ -10,8 +10,12 @@ no acredita compilación, pruebas aprobadas ni funcionamiento contra la API desp
 - Incluir pruebas automatizadas de las reglas y del comportamiento del formulario.
 - Mantener el backend sin cambios. Cualquier propuesta de modificación requiere
   explicación previa al propietario y autorización explícita.
-- Desarrollar por sección: rama desde main, validación, PR, revisión, merge y
-  siguiente rama desde el main actualizado.
+- Desarrollar por sección: rama desde test actualizado, validación, commit/push,
+  PR hacia test, revisión del tester/CI y merge autorizado. La siguiente rama
+  parte de test actualizado después de integrar la anterior.
+- Tras aprobar las comprobaciones locales y la compilación, hacer commit y push
+  de la fase sin pedir otra confirmación. Informar evidencia y pendientes.
+  No hacer merge ni abrir un PR sin indicación del usuario. Ver AGENTS.md.
 
 Los destinos exactos de entrega, la fecha de entrega y los dispositivos de prueba
 quedan pendientes de confirmar. La rúbrica recibida requiere su análisis.
@@ -123,7 +127,7 @@ no debe cambiar la autorización. Un rol desconocido no concede permisos Nurse.
 ## Ramas y secuencia
 
 La documentación inicial se incluye en chore/mobile-foundation.
-Cada rama posterior parte del main actualizado tras integrar la anterior.
+Cada rama posterior parte de test actualizado tras integrar la anterior.
 
 | Orden | Rama |
 | --- | --- |
@@ -154,7 +158,8 @@ no soporta sus operaciones. Confirmar si el despliegue usa el mismo commit revis
 - Ejecutar formato, flutter analyze, flutter test y build aplicable.
 - Registrar evidencia de integración manual con el backend existente.
 - Documentar resultados reales y checks pendientes.
-- Revisar el PR antes del merge y actualizar main antes de la siguiente rama.
+- Revisar CI del último commit y APK del tester antes del merge; actualizar test
+  antes de la siguiente rama. Integrar test en main después de la revisión final.
 
 ## Estado de la revisión
 

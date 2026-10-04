@@ -102,7 +102,18 @@ Con datos ficticios autorizados y cuentas de los tres roles:
 Eventos requiere revisión del tester y CI antes del merge. La siguiente fase
 es SBAR y entrega de turno, desde `test` actualizado tras integrar Eventos.
 
-## PR preparado hacia test
+## Estado del PR
+
+PR [#9](https://github.com/NursePulse/MultiPlatform-App-NursePulse/pull/9)
+creado por el usuario hacia `test`. Consulta del 2026-10-04: abierto, sin merge;
+`Verify Flutter` en curso para `0c4b14d`. Este registro corresponde a esa consulta,
+no acredita los checks de commits posteriores. Los pushes a esta rama actualizan
+el mismo PR y requieren comprobar otra vez los checks del nuevo commit.
+
+El flujo actualizado en `AGENTS.md` autoriza commit y push tras las verificaciones
+locales y la compilación. El merge conserva la revisión del tester y CI.
+
+## Texto del PR hacia test
 
 Título:
 
