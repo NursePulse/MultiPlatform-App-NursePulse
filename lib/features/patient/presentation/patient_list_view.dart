@@ -2,21 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/network/api_exception.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/async_value_view.dart';
-import '../../../shared/widgets/page_title.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../application/patient_notifier.dart';
 import '../domain/patient.dart';
+import '../domain/patient_rules.dart';
 import 'patient_form_sheet.dart';
-
-ChipPalette _statusPalette(PatientStatus status) => switch (status) {
-  PatientStatus.stable => ClinicalColors.patientStable,
-  PatientStatus.observation => ClinicalColors.patientObservation,
-  PatientStatus.critical => ClinicalColors.patientCritical,
-  PatientStatus.discharged => ClinicalColors.patientDischarged,
-};
 
 class PatientListView extends ConsumerStatefulWidget {
   const PatientListView({super.key});
@@ -26,88 +15,82 @@ class PatientListView extends ConsumerStatefulWidget {
 }
 
 class _PatientListViewState extends ConsumerState<PatientListView> {
-  final _queryController = TextEditingController();
-  String _query = '';
+  final _query = TextEditingController();
+  bool _confirming = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(patientNotifierProvider.notifier).load());
-    _queryController.addListener(
-      () => setState(() => _query = _queryController.text.trim().toLowerCase()),
-    );
+
+    Future.microtask(() {
+      if (mounted) ref.read(patientNotifierProvider.notifier).load();
+    });
   }
 
   @override
   void dispose() {
-    _queryController.dispose();
+    _query.dispose();
     super.dispose();
   }
 
-  /// Mirrors filteredPatients() in patient-list.ts.
-  List<Patient> _filter(List<Patient> patients) {
-    if (_query.isEmpty) return patients;
-    return patients.where((p) {
-      final haystack =
-          '${p.code} ${p.fullName} ${p.documentNumber} ${p.roomNumber} '
-                  '${p.bedNumber} ${p.statusLabel} ${p.diagnosis}'
-              .toLowerCase();
-      return haystack.contains(_query);
-    }).toList();
-  }
+  Future<void> _action(Patient patient, String action) async {
+    if (_confirming || ref.read(patientNotifierProvider).saving) return;
 
-  Future<void> _discharge(Patient patient) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: const Text('¿Seguro que deseas dar de alta a este paciente?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Dar de alta'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    try {
-      await ref.read(patientNotifierProvider.notifier).discharge(patient.id);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(describeDioError(e))));
-      }
+    if (action == 'edit') {
+      await showPatientFormSheet(context, editing: patient);
+      return;
     }
-  }
 
-  Future<void> _delete(Patient patient) async {
+    _confirming = true;
+    final deleting = action == 'delete';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        content: const Text('¿Seguro que deseas eliminar este paciente?'),
+        title: Text(deleting ? 'Eliminar paciente' : 'Dar de alta'),
+        content: Text(
+          deleting
+              ? '¿Eliminar a ${patient.fullName}? Esta acción es permanente.'
+              : '¿Dar de alta a ${patient.fullName}?',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Eliminar'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(deleting ? 'Eliminar' : 'Dar de alta'),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+
+    _confirming = false;
+    if (!mounted || confirmed != true) return;
+
     try {
-      await ref.read(patientNotifierProvider.notifier).delete(patient.id);
+      final notifier = ref.read(patientNotifierProvider.notifier);
+
+      if (deleting) {
+        await notifier.delete(patient.id);
+      } else {
+        await notifier.discharge(patient.id);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              deleting ? 'Paciente eliminado.' : 'Paciente dado de alta.',
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(describeDioError(e))));
+            .showSnackBar(SnackBar(content: Text(describePatientError(e))));
       }
     }
   }
@@ -115,98 +98,179 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(patientNotifierProvider);
+    final permissions = ref.watch(patientPermissionsProvider);
+
+    final patients = state.patients
+        .where((p) => PatientRules.matches(p, _query.text))
+        .toList();
+
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showPatientFormSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo paciente'),
-      ),
-      body: Column(
-        children: [
-          const PageTitle('Pacientes'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _queryController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Buscar por nombre, documento, habitación...',
+      floatingActionButton: permissions.create
+          ? FloatingActionButton.extended(
+              onPressed: state.saving
+                  ? null
+                  : () => showPatientFormSheet(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo paciente'),
+            )
+          : null,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Pacientes',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _query,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText:
+                          'Buscar por nombre, documento, habitación o estado',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _query.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Limpiar búsqueda',
+                              onPressed: () => setState(_query.clear),
+                              icon: const Icon(Icons.close),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${patients.length} de ${state.patients.length} pacientes',
+                  ),
+                ],
               ),
             ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(patientNotifierProvider.notifier).load(),
-              child: AsyncValueView<PatientState>(
-                loading: state.loading,
-                error: state.error,
-                data: state,
-                isEmpty: (s) => _filter(s.patients).isEmpty,
-                onRetry: () =>
+            if (state.loading || state.saving) const LinearProgressIndicator(),
+            if (state.error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(state.error!)),
+                    TextButton(
+                      onPressed: state.loading || state.saving
+                          ? null
+                          : () => ref
+                                .read(patientNotifierProvider.notifier)
+                                .load(),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () =>
                     ref.read(patientNotifierProvider.notifier).load(),
-                builder: (context, s) {
-                  final patients = _filter(s.patients);
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                    itemCount: patients.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final patient = patients[index];
-                      return Card(
-                        child: ListTile(
-                          onTap: () =>
-                              context.go('/patients/${patient.id}/monitoring'),
-                          leading: CircleAvatar(child: Text(patient.initials)),
-                          title: Text(patient.fullName),
-                          subtitle: Text(
-                            '${patient.diagnosis} · Hab. ${patient.roomNumber}-${patient.bedNumber} · ${patient.age} años',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                  itemCount: patients.isEmpty ? 1 : patients.length,
+                  itemBuilder: (context, index) {
+                    if (patients.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          state.loading
+                              ? 'Cargando pacientes…'
+                              : state.error != null
+                              ? 'No se pudo cargar el listado.'
+                              : state.patients.isEmpty
+                              ? 'No hay pacientes registrados.'
+                              : 'No hay coincidencias.',
+                        ),
+                      );
+                    }
+
+                    final p = patients[index];
+
+                    return Card(
+                      child: InkWell(
+                        onTap: () =>
+                            context.push('/patients/${p.id}/monitoring'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              StatusChip(
-                                label: patient.statusLabel,
-                                palette: _statusPalette(patient.status),
-                              ),
-                              PopupMenuButton<String>(
-                                onSelected: (action) => switch (action) {
-                                  'edit' => showPatientFormSheet(
-                                    context,
-                                    editing: patient,
-                                  ),
-                                  'discharge' => _discharge(patient),
-                                  'delete' => _delete(patient),
-                                  _ => null,
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text('Editar'),
-                                  ),
-                                  if (patient.status !=
-                                      PatientStatus.discharged)
-                                    const PopupMenuItem(
-                                      value: 'discharge',
-                                      child: Text('Dar de alta'),
+                              Row(
+                                children: [
+                                  CircleAvatar(child: Text(p.initials)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      p.fullName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Eliminar'),
+                                  ),
+                                  if (permissions.update || permissions.delete)
+                                    PopupMenuButton<String>(
+                                      enabled: !state.saving,
+                                      onSelected: (action) =>
+                                          _action(p, action),
+                                      itemBuilder: (_) => [
+                                        if (permissions.update)
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Text('Editar'),
+                                          ),
+                                        if (permissions.update &&
+                                            p.status !=
+                                                PatientStatus.discharged)
+                                          const PopupMenuItem(
+                                            value: 'discharge',
+                                            child: Text('Dar de alta'),
+                                          ),
+                                        if (permissions.delete)
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('Eliminar'),
+                                          ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  Chip(label: Text(p.statusLabel)),
+                                  Chip(
+                                    label: Text(
+                                      'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
+                                    ),
                                   ),
                                 ],
                               ),
+                              Text(
+                                '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
+                              ),
+                              const SizedBox(height: 4),
+                              Text(p.diagnosis),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
