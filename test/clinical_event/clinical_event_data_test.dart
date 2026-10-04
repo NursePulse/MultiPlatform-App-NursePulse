@@ -121,6 +121,7 @@ void main() {
             dioProvider.overrideWithValue(dio),
             clinicalEventUserProvider.overrideWithValue(actor),
             alertUserProvider.overrideWithValue(actor),
+            patientMonitoringRolesProvider.overrideWithValue(actor.roles),
             secureStoreProvider.overrideWithValue(EmptyMemoryStore()),
           ],
         );
@@ -212,6 +213,7 @@ void main() {
             dioProvider.overrideWithValue(dio),
             clinicalEventUserProvider.overrideWithValue(actor),
             alertUserProvider.overrideWithValue(actor),
+            patientMonitoringRolesProvider.overrideWithValue(actor.roles),
             secureStoreProvider.overrideWithValue(EmptyMemoryStore()),
           ],
         );

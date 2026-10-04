@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../dashboard/application/dashboard_notifier.dart';
 import '../../audit/infrastructure/audit_api.dart';
 import '../../iam/application/auth_notifier.dart';
 import '../../iam/domain/user.dart';
@@ -335,6 +336,9 @@ final sbarNotifierProvider = StateNotifierProvider<SbarNotifier, SbarState>((
         patientId: patientId,
       );
     },
-    onChanged: (id) => ref.invalidate(sbarDetailProvider(id)),
+    onChanged: (id) {
+      ref.invalidate(sbarDetailProvider(id));
+      ref.invalidate(dashboardNotifierProvider);
+    },
   );
 });

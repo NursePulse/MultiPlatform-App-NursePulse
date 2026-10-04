@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../dashboard/application/dashboard_notifier.dart';
 import '../../audit/application/audit_register.dart';
 import '../../iam/application/auth_notifier.dart';
 import '../../iam/domain/user.dart';
@@ -9,6 +10,7 @@ import '../../iam/infrastructure/iam_api.dart';
 import '../domain/patient.dart';
 import '../domain/patient_rules.dart';
 import '../infrastructure/patient_api.dart';
+import 'patient_detail.dart';
 
 String describePatientError(Object error) {
   if (error is FormatException) return error.message;
@@ -48,12 +50,13 @@ class PatientState {
 }
 
 class PatientNotifier extends StateNotifier<PatientState> {
-  PatientNotifier(this._api, this._roles, {this.audit})
+  PatientNotifier(this._api, this._roles, {this.audit, this.onChanged})
     : super(const PatientState());
 
   final PatientApi _api;
   final List<String> Function() _roles;
   final Future<void> Function(Patient, String)? audit;
+  final void Function(String id)? onChanged;
 
   int _loadId = 0;
   int _revision = 0;
@@ -138,6 +141,9 @@ class PatientNotifier extends StateNotifier<PatientState> {
         try {
           await audit?.call(patient, id == null ? 'CREATE' : 'UPDATE');
         } catch (_) {}
+        try {
+          onChanged?.call(patient.id);
+        } catch (_) {}
       }
 
       return patient;
@@ -191,6 +197,9 @@ class PatientNotifier extends StateNotifier<PatientState> {
         state = state.copyWith(
           patients: state.patients.where((p) => p.id != id).toList(),
         );
+        try {
+          onChanged?.call(id);
+        } catch (_) {}
       }
     } finally {
       if (mounted) state = state.copyWith(saving: false);
@@ -233,7 +242,7 @@ final patientNotifierProvider =
     StateNotifierProvider<PatientNotifier, PatientState>(
       (ref) => PatientNotifier(
         ref.watch(patientApiProvider),
-        () => ref.read(authNotifierProvider).user?.roles ?? const [],
+        () => ref.read(patientPermissionsProvider).roles,
         audit: (p, action) => registerAudit(
           ref,
           entityType: 'PATIENT',
@@ -241,5 +250,10 @@ final patientNotifierProvider =
           actionType: action,
           patientId: p.id,
         ),
+        onChanged: (id) {
+          ref.invalidate(patientDetailProvider(id));
+          ref.invalidate(patientHistoryProvider(id));
+          ref.invalidate(dashboardNotifierProvider);
+        },
       ),
     );

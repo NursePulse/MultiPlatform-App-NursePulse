@@ -102,6 +102,7 @@ void main() {
           overrides: [
             patientDetailProvider('1')
                 .overrideWith((ref) async => patientFrom(patientCommand())),
+            patientMonitoringRolesProvider.overrideWithValue([kRoleNurse]),
             patientHistoryProvider('1').overrideWith((ref) async {
               attempts++;
 

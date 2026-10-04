@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../patient/application/patient_detail.dart';
 import '../../../core/network/api_exception.dart';
+import '../../dashboard/application/dashboard_notifier.dart';
 import '../../audit/infrastructure/audit_api.dart';
 import '../../iam/application/auth_notifier.dart';
 import '../../iam/domain/user.dart';
@@ -218,7 +219,9 @@ final vitalSignNotifierProvider =
         () => ref.read(vitalSignUserProvider),
         ref.watch(patientApiProvider).getById,
         ref.watch(vitalSignEffectsProvider),
-        onSaved: (sign) =>
-            ref.invalidate(patientHistoryProvider(sign.patientId)),
+        onSaved: (sign) {
+          ref.invalidate(patientHistoryProvider(sign.patientId));
+          ref.invalidate(dashboardNotifierProvider);
+        },
       ),
     );

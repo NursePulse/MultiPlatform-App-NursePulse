@@ -29,7 +29,7 @@ const _navItems = [
     '/reports',
     'Reportes',
     Icons.bar_chart_rounded,
-    visibleFor: [kRoleAdmin],
+    visibleFor: [kRoleAdmin, kRoleDoctor],
   ),
   _NavItem(
     '/audit',
