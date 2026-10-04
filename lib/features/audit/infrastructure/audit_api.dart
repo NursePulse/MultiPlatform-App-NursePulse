@@ -46,7 +46,7 @@ class AuditApi {
         'actionType': actionType,
         'performedBy': performedBy,
         if (patientId != null) 'patientId': int.parse(patientId),
-        if (metadata != null) 'metadata': metadata,
+        'metadata': ?metadata,
       },
     );
     return AuditLog.fromJson(response.data as Map<String, dynamic>);

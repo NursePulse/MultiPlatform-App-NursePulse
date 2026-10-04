@@ -78,9 +78,8 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
       await ref.read(patientNotifierProvider.notifier).discharge(patient.id);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(describeDioError(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(describeDioError(e))));
       }
     }
   }
@@ -107,9 +106,8 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
       await ref.read(patientNotifierProvider.notifier).delete(patient.id);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(describeDioError(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(describeDioError(e))));
       }
     }
   }
@@ -157,9 +155,8 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                       final patient = patients[index];
                       return Card(
                         child: ListTile(
-                          onTap: () => context.go(
-                            '/patients/${patient.id}/monitoring',
-                          ),
+                          onTap: () =>
+                              context.go('/patients/${patient.id}/monitoring'),
                           leading: CircleAvatar(child: Text(patient.initials)),
                           title: Text(patient.fullName),
                           subtitle: Text(

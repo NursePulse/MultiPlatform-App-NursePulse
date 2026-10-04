@@ -183,8 +183,7 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
         .read(usersNotifierProvider)
         .users
         .where(
-          (user) =>
-              user.roles.contains(kRoleNurse) && user.id != currentUserId,
+          (user) => user.roles.contains(kRoleNurse) && user.id != currentUserId,
         )
         .toList();
   }
@@ -214,9 +213,8 @@ class _SbarSection extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: AppTheme.primary),
+            style: Theme.of(context).textTheme.labelLarge
+                ?.copyWith(color: AppTheme.primary),
           ),
           const SizedBox(height: 2),
           Text(value.isEmpty ? '—' : value),
@@ -328,8 +326,7 @@ class _RegisterSbarDialogState extends ConsumerState<_RegisterSbarDialog> {
                         child: Text(nurse.username),
                       ),
                   ],
-                  validator: (value) =>
-                      value == null ? 'Requerido' : null,
+                  validator: (value) => value == null ? 'Requerido' : null,
                   onChanged: (value) => setState(() => _nurse = value),
                 ),
                 const SizedBox(height: 8),

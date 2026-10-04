@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "NursePulse: API desplegada",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=https://backend-nursepulse-qfct.onrender.com/api/v1"
+      ]
+    },
+    {
+      "name": "NursePulse: Android / API local",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1"
+      ]
+    },
+    {
+      "name": "NursePulse: Chrome / API local",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://localhost:8080/api/v1"
+      ]
+    }
+  ]
+}

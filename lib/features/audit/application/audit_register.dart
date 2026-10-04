@@ -16,13 +16,16 @@ Future<void> registerAudit(
   String? patientId,
 }) async {
   try {
-    await ref.read(auditApiProvider).create(
-      entityType: entityType,
-      entityId: entityId,
-      actionType: actionType,
-      performedBy: ref.read(authNotifierProvider).user?.username ?? _defaultActor,
-      patientId: patientId,
-    );
+    await ref
+        .read(auditApiProvider)
+        .create(
+          entityType: entityType,
+          entityId: entityId,
+          actionType: actionType,
+          performedBy:
+              ref.read(authNotifierProvider).user?.username ?? _defaultActor,
+          patientId: patientId,
+        );
   } catch (_) {
     // The backend remains the source of truth; audit persistence is best-effort.
   }

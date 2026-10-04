@@ -131,9 +131,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                 child: Text(
                   AppConfig.appName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               const Divider(height: 1),
@@ -208,10 +207,7 @@ class _ShellHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                username,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text(username, style: Theme.of(context).textTheme.titleSmall),
               Text(
                 viewMode.label,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -233,10 +229,7 @@ class _ShellHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             )
-          : Padding(
-              padding: const EdgeInsets.all(8),
-              child: roleBadge,
-            ),
+          : Padding(padding: const EdgeInsets.all(8), child: roleBadge),
     );
 
     return SafeArea(

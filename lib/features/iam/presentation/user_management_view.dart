@@ -36,17 +36,23 @@ class _UserManagementViewState extends ConsumerState<UserManagementView> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text('Rol de ${user.username}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final role in _allRoles)
-                RadioListTile<String>(
-                  value: role,
-                  groupValue: selected,
-                  title: Text(_roleLabel(role)),
-                  onChanged: (value) => setState(() => selected = value!),
-                ),
-            ],
+          content: RadioGroup<String>(
+            groupValue: selected,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => selected = value);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final role in _allRoles)
+                  RadioListTile<String>(
+                    value: role,
+                    title: Text(_roleLabel(role)),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -63,19 +69,17 @@ class _UserManagementViewState extends ConsumerState<UserManagementView> {
     );
     if (result == null || !mounted) return;
     try {
-      await ref
-          .read(usersNotifierProvider.notifier)
-          .updateRoles(user.id, [result]);
+      await ref.read(usersNotifierProvider.notifier).updateRoles(user.id, [
+        result,
+      ]);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Rol actualizado.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Rol actualizado.')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(describeDioError(e))));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(describeDioError(e))));
       }
     }
   }

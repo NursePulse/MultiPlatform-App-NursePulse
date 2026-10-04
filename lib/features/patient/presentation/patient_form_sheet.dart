@@ -78,8 +78,9 @@ class _PatientFormSheetState extends ConsumerState<_PatientFormSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _birthDate == null) {
-      if (_birthDate == null)
+      if (_birthDate == null) {
         setState(() => _error = 'Selecciona la fecha de nacimiento.');
+      }
       return;
     }
     setState(() {
@@ -200,7 +201,9 @@ class _PatientFormSheetState extends ConsumerState<_PatientFormSheet> {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(_isEditing ? 'Guardar cambios' : 'Registrar paciente'),
+                    : Text(
+                        _isEditing ? 'Guardar cambios' : 'Registrar paciente',
+                      ),
               ),
             ],
           ),
