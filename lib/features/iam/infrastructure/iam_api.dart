@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/sign_up_request.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/user.dart';
+import '../domain/user_management_rules.dart';
 
 class AuthenticatedSession {
   const AuthenticatedSession({required this.user, required this.token});
@@ -70,6 +71,13 @@ class RolesApi {
   }
 }
 
+class UserRolesWriteReceipt {
+  const UserRolesWriteReceipt({required this.id, this.user, this.readError});
+  final String id;
+  final User? user;
+  final Object? readError;
+}
+
 class UsersApi {
   UsersApi(this._dio);
 
@@ -83,16 +91,56 @@ class UsersApi {
   }
 
   Future<User> getById(String id) async {
-    final response = await _dio.get('/users/$id');
-    return User.fromJson(response.data as Map<String, dynamic>);
+    final validated = UserManagementRules.id(id);
+    final response = await _dio.get('/users/$validated');
+    return _managedUser(response.data, validated);
   }
 
-  Future<User> updateRoles(String userId, List<String> roles) async {
+  User _managedUser(Object? data, String id) {
+    if (data is! Map<String, dynamic> ||
+        data['roles'] is! List ||
+        (data['roles'] as List).isEmpty ||
+        !(data['roles'] as List).every(UserManagementRules.roles.contains) ||
+        data['username'] is! String ||
+        (data['username'] as String).trim().isEmpty) {
+      throw const FormatException(
+        'La API no devolvió un usuario con roles válidos.',
+      );
+    }
+    final user = User.fromJson(data);
+    if (UserManagementRules.id(user.id) != id) {
+      throw const FormatException(
+        'La API devolvió otro usuario. Recarga el listado.',
+      );
+    }
+    return User.fromJson({...data, 'id': id});
+  }
+
+  Future<UserRolesWriteReceipt> updateRoles(
+    String userId,
+    List<String> roles,
+  ) async {
+    final id = UserManagementRules.id(userId);
+    final role = UserManagementRules.role(roles);
     final response = await _dio.patch(
-      '/users/$userId/roles',
-      data: {'roles': roles},
+      '/users/$id/roles',
+      data: {
+        'roles': [role],
+      },
     );
-    return User.fromJson(response.data as Map<String, dynamic>);
+    // Un PATCH 2xx ya fue confirmado: recuperar solo con GET, nunca repetir PATCH.
+    try {
+      return UserRolesWriteReceipt(
+        id: id,
+        user: _managedUser(response.data, id),
+      );
+    } catch (_) {
+      try {
+        return UserRolesWriteReceipt(id: id, user: await getById(id));
+      } catch (e) {
+        return UserRolesWriteReceipt(id: id, readError: e);
+      }
+    }
   }
 }
 
