@@ -195,12 +195,18 @@ final vitalSignEffectsProvider = Provider<VitalSignEffects>((ref) {
       );
     },
     createAlert: (sign, _) async {
-      await alerts.create(
+      final receipt = await alerts.create(
         patientId: sign.patientId,
         type: AlertType.respiratory,
         severity: sign.isCritical ? AlertSeverity.critical : AlertSeverity.high,
         description: VitalSignRules.alertDescription(sign),
       );
+      if (receipt.readError != null ||
+          ref.read(alertNotifierProvider).warning != null) {
+        throw const FormatException(
+          'Revisa el aviso en Alertas; no repitas los signos.',
+        );
+      }
     },
   );
 });
