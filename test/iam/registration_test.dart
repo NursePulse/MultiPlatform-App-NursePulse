@@ -43,14 +43,34 @@ void main() {
     expect(RegistrationValidators.phone('912345678'), isNull);
   });
 
-  test('edad: 17/18/120/121 y solo enteros', () {
-    for (final age in ['', '17', '121', '-18', '18.5', 'NaN', 'Infinity']) {
-      expect(RegistrationValidators.age(age), isNotNull);
-    }
-    expect(RegistrationValidators.age('18'), isNull);
-    expect(RegistrationValidators.age('120'), isNull);
-  });
+  test('edad: 17/18/90/91 y solo enteros', () {
+    for (final age in [
+      '',
+      '17',
+      '91',
+      '120',
+      '-18',
+      '18.5',
+      'NaN',
+      'Infinity',
+    ]) {
+      expect(RegistrationValidators.age(age), isNotNull, reason: 'Edad: $age');
 
+      expect(
+        () => validRequest(age: age),
+        throwsFormatException,
+        reason: 'No debe construirse un registro con edad $age.',
+      );
+    }
+
+    for (final age in ['18', '90']) {
+      expect(RegistrationValidators.age(age), isNull);
+
+      final request = validRequest(age: age);
+      expect(request.age, int.parse(age));
+      expect(request.toJson()['age'], int.parse(age));
+    }
+  });
   test('correo: formato, espacios y máximo 254', () {
     expect(RegistrationValidators.email('ana@example.com'), isNull);
     for (final email in [
