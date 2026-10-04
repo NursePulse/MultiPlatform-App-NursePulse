@@ -37,7 +37,7 @@ class SbarTransfer {
     background: json['background'] as String? ?? '',
     assessment: json['assessment'] as String? ?? '',
     recommendation: json['recommendation'] as String? ?? '',
-    status: json['status'] as String? ?? 'PENDING',
+    status: json['status'] as String,
     registeredBy: json['registeredBy'] as String?,
     incomingNurseId: json['incomingNurseId']?.toString(),
     targetNurseId: json['targetNurseId']?.toString(),
@@ -53,7 +53,8 @@ class SbarTransfer {
     'ACKNOWLEDGED' => 'Atendido',
     'COMPLETED' => 'Completado',
     'CANCELLED' => 'Cancelado',
-    _ => 'Pendiente',
+    'PENDING' => 'Pendiente',
+    _ => status,
   };
 
   bool get canAcknowledge => status == 'PENDING';
