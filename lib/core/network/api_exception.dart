@@ -1,5 +1,28 @@
 import 'package:dio/dio.dart';
 
+/// Message for a failed sign-in. The backend answers wrong credentials with
+/// 400 (VALIDATION_ERROR) and an unverified email with 422, and puts the useful
+/// text in `details`, so the generic `message` alone would not help the user.
+String describeSignInError(Object error) {
+  if (error is DioException) {
+    final status = error.response?.statusCode;
+    final data = error.response?.data;
+    final details = data is Map ? data['details'] : null;
+
+    if (status == 422) {
+      return 'Debes confirmar tu correo antes de iniciar sesión. '
+          'Revisa tu bandeja de entrada.';
+    }
+    if (status == 401 ||
+        (status == 400 &&
+            details is String &&
+            details.toLowerCase().contains('invalid username or password'))) {
+      return 'Usuario o contraseña incorrectos.';
+    }
+  }
+  return describeDioError(error);
+}
+
 /// Extracts a human-readable, Spanish message from a failed request.
 String describeDioError(Object error) {
   if (error is DioException) {

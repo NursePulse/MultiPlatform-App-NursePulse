@@ -47,7 +47,9 @@ class _SignInViewState extends ConsumerState<SignInView> {
     } catch (e) {
       if (mounted) {
         setState(
-          () => _error = e is FormatException ? e.message : describeDioError(e),
+          () => _error = e is FormatException
+              ? e.message
+              : describeSignInError(e),
         );
       }
     } finally {
