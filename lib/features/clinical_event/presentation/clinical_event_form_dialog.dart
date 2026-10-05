@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +12,7 @@ import '../domain/clinical_event_rules.dart';
 Future<void> showClinicalEventForm(BuildContext context) => showDialog<void>(
   context: context,
   barrierDismissible: false,
-  builder: (_) => const ClinicalEventFormDialog(),
+  builder: (_) => ClinicalEventFormDialog(),
 );
 
 class ClinicalEventFormDialog extends ConsumerStatefulWidget {
@@ -63,7 +65,9 @@ class _ClinicalEventFormDialogState
       if (mounted) {
         final warning = ref.read(clinicalEventNotifierProvider).warning;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(warning ?? 'Evento clínico guardado.')),
+          SnackBar(
+            content: Text(context.tr(warning ?? 'Evento clínico guardado.')),
+          ),
         );
         Navigator.of(context).pop();
       }
@@ -87,7 +91,7 @@ class _ClinicalEventFormDialogState
       canPop: !blocked,
       child: AlertDialog(
         scrollable: true,
-        title: const Text('Registrar evento clínico'),
+        title: Text(context.tr('Registrar evento clínico')),
         content: SingleChildScrollView(
           child: Form(
             key: _form,
@@ -100,7 +104,9 @@ class _ClinicalEventFormDialogState
                   ),
                   initialValue: selected ? _patientId : null,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Paciente'),
+                  decoration: InputDecoration(
+                    labelText: context.tr('Paciente'),
+                  ),
                   items: [
                     for (final p in patients.patients)
                       DropdownMenuItem(
@@ -114,36 +120,37 @@ class _ClinicalEventFormDialogState
                   onChanged: blocked
                       ? null
                       : (value) => setState(() => _patientId = value),
-                  validator: (value) =>
-                      value == null ||
-                          !patients.patients.any((p) => p.id == value)
-                      ? 'Selecciona un paciente disponible.'
-                      : ClinicalEventRules.patient(value),
+                  validator: (value) => context.validation(
+                    value == null ||
+                            !patients.patients.any((p) => p.id == value)
+                        ? 'Selecciona un paciente disponible.'
+                        : ClinicalEventRules.patient(value),
+                  ),
                 ),
-                if (patients.loading) const LinearProgressIndicator(),
-                if (patients.error != null) Text(patients.error!),
+                if (patients.loading) LinearProgressIndicator(),
+                if (patients.error != null) Text(context.tr(patients.error!)),
                 if (patients.error != null || patients.patients.isEmpty)
                   TextButton(
                     onPressed: blocked || patients.loading
                         ? null
                         : () =>
                               ref.read(patientNotifierProvider.notifier).load(),
-                    child: const Text('Recargar pacientes'),
+                    child: Text(context.tr('Recargar pacientes')),
                   ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  key: const ValueKey('event-type'),
+                  key: ValueKey('event-type'),
                   initialValue: _type,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo de evento',
+                  decoration: InputDecoration(
+                    labelText: context.tr('Tipo de evento'),
                   ),
                   items: [
                     for (final t in ClinicalEventType.values)
                       DropdownMenuItem(
                         value: t,
                         child: Text(
-                          ClinicalEventType.labelFor(t),
+                          context.tr(ClinicalEventType.labelFor(t)),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -151,65 +158,75 @@ class _ClinicalEventFormDialogState
                   onChanged: blocked
                       ? null
                       : (value) => setState(() => _type = value ?? _type),
-                  validator: ClinicalEventRules.type,
+                  validator: (value) =>
+                      context.validation(ClinicalEventRules.type(value)),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  key: const ValueKey('event-severity'),
+                  key: ValueKey('event-severity'),
                   initialValue: _severity,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Severidad'),
+                  decoration: InputDecoration(
+                    labelText: context.tr('Severidad'),
+                  ),
                   items: [
                     for (final s in ClinicalEventSeverity.values)
                       DropdownMenuItem(
                         value: s,
-                        child: Text(ClinicalEventSeverity.labelFor(s)),
+                        child: Text(
+                          context.tr(ClinicalEventSeverity.labelFor(s)),
+                        ),
                       ),
                   ],
                   onChanged: blocked
                       ? null
                       : (value) =>
                             setState(() => _severity = value ?? _severity),
-                  validator: ClinicalEventRules.severity,
+                  validator: (value) =>
+                      context.validation(ClinicalEventRules.severity(value)),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextFormField(
-                  key: const ValueKey('event-title'),
+                  key: ValueKey('event-title'),
                   controller: _title,
                   enabled: !blocked,
                   maxLength: 120,
                   maxLengthEnforcement: MaxLengthEnforcement.none,
-                  decoration: const InputDecoration(
-                    labelText: 'Título',
-                    helperText: '4–120 caracteres',
+                  decoration: InputDecoration(
+                    labelText: context.tr('Título'),
+                    helperText: context.tr('4–120 caracteres'),
                   ),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: (v) =>
-                      ClinicalEventRules.text(v, 'Título', 4, 120),
+                  validator: (v) => context.validation(
+                    ClinicalEventRules.text(v, 'Título', 4, 120),
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextFormField(
-                  key: const ValueKey('event-description'),
+                  key: ValueKey('event-description'),
                   controller: _description,
                   enabled: !blocked,
                   maxLength: 1000,
                   maxLines: 3,
                   maxLengthEnforcement: MaxLengthEnforcement.none,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    helperText: '10–1000 caracteres',
+                  decoration: InputDecoration(
+                    labelText: context.tr('Descripción'),
+                    helperText: context.tr('10–1000 caracteres'),
                   ),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: (v) =>
-                      ClinicalEventRules.text(v, 'Descripción', 10, 1000),
+                  validator: (v) => context.validation(
+                    ClinicalEventRules.text(v, 'Descripción', 10, 1000),
+                  ),
                 ),
                 if (!allowed)
-                  const Text(
-                    'No tienes permiso para registrar eventos clínicos.',
+                  Text(
+                    context.tr(
+                      'No tienes permiso para registrar eventos clínicos.',
+                    ),
                   ),
                 if (_error != null)
                   Text(
-                    _error!,
+                    context.tr(_error!),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -220,12 +237,12 @@ class _ClinicalEventFormDialogState
         ),
         actions: [
           TextButton(
-            key: const ValueKey('event-cancel'),
+            key: ValueKey('event-cancel'),
             onPressed: blocked ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
           FilledButton(
-            key: const ValueKey('event-save'),
+            key: ValueKey('event-save'),
             onPressed:
                 blocked ||
                     !allowed ||
@@ -233,7 +250,7 @@ class _ClinicalEventFormDialogState
                     patients.patients.isEmpty
                 ? null
                 : _submit,
-            child: Text(_busy ? 'Guardando…' : 'Guardar'),
+            child: Text(context.tr(_busy ? 'Guardando…' : 'Guardar')),
           ),
         ],
       ),

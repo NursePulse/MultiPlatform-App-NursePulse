@@ -1,3 +1,6 @@
+import '../../../shared/widgets/list_page_body.dart';
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/page_title.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../../shared/widgets/clinical_card.dart';
 import '../../patient/application/patient_notifier.dart';
 import '../../patient/domain/patient.dart';
 import '../application/clinical_event_notifier.dart';
@@ -51,41 +55,43 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
               onPressed: state.saving
                   ? null
                   : () => showClinicalEventForm(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Registrar evento'),
+              icon: Icon(Icons.add),
+              label: Text(context.tr('Registrar evento')),
             )
           : null,
       body: SafeArea(
-        child: Column(
-          children: [
-            const PageTitle('Eventos clínicos'),
-            if (state.loading || state.saving) const LinearProgressIndicator(),
+        top: false,
+        bottom: false,
+        child: ListPageBody(
+          header: [
+            PageTitle('Eventos clínicos'),
+            if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.error!)),
+                    Expanded(child: Text(context.tr(state.error!))),
                     TextButton(
                       onPressed: state.loading || state.saving
                           ? null
                           : () => ref
                                 .read(clinicalEventNotifierProvider.notifier)
                                 .load(),
-                      child: const Text('Reintentar'),
+                      child: Text(context.tr('Reintentar')),
                     ),
                   ],
                 ),
               ),
             if (state.warning != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.warning!)),
+                    Expanded(child: Text(context.tr(state.warning!))),
                     IconButton(
-                      tooltip: 'Ocultar aviso',
-                      icon: const Icon(Icons.close),
+                      tooltip: context.tr('Ocultar aviso'),
+                      icon: Icon(Icons.close),
                       onPressed: () => ref
                           .read(clinicalEventNotifierProvider.notifier)
                           .clearWarning(),
@@ -93,50 +99,64 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                   ],
                 ),
               ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(clinicalEventNotifierProvider.notifier).load(),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  children: [
-                    if (state.events.isEmpty &&
-                        !state.loading &&
-                        state.error == null)
-                      const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'No hay eventos clínicos registrados.',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    for (final event in state.events)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Card(
-                          child: ListTile(
-                            title: Text(event.title),
-                            subtitle: Text(
-                              '${_patientName(patients, event.patientId)} · '
-                              '${ClinicalEventType.labelFor(event.eventType)} · '
-                              '${_dateFormat.format(event.occurredAt.toLocal())}\n'
-                              '${event.description}\nResponsable: ${event.registeredBy}',
-                            ),
-                            trailing: StatusChip(
-                              label: ClinicalEventSeverity.labelFor(
-                                event.severity,
-                              ),
-                              palette: _severityPalette(event.severity),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
           ],
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(clinicalEventNotifierProvider.notifier).load(),
+            child: ListView(
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 96),
+              children: [
+                if (state.events.isEmpty &&
+                    !state.loading &&
+                    state.error == null)
+                  Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      context.tr('No hay eventos clínicos registrados.'),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                for (final event in state.events)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: ClinicalCard(
+                      children: [
+                        Text(
+                          event.title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        SizedBox(height: 4),
+                        Text(_patientName(patients, event.patientId)),
+                        SizedBox(height: 8),
+                        StatusChip(
+                          label: ClinicalEventSeverity.labelFor(event.severity),
+                          palette: _severityPalette(event.severity),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          context.tr(
+                            ClinicalEventType.labelFor(event.eventType),
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        Text(
+                          _dateFormat.format(event.occurredAt.toLocal()),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        SizedBox(height: 8),
+                        Text(event.description),
+                        SizedBox(height: 8),
+                        Text(
+                          context.tr('Responsable: ${event.registeredBy}'),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -146,6 +166,6 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
     for (final patient in patients) {
       if (patient.id == id) return patient.fullName;
     }
-    return 'Paciente #$id';
+    return context.tr('Paciente #$id');
   }
 }

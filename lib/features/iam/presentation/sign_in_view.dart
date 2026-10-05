@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,14 +76,16 @@ class _SignInViewState extends ConsumerState<SignInView> {
               controller: _usernameController,
               enabled: !_submitting,
               maxLength: 50,
-              decoration: const InputDecoration(
-                labelText: 'Usuario',
+              decoration: InputDecoration(
+                labelText: context.tr('Usuario'),
+                counterText: '',
                 prefixIcon: Icon(Icons.person_outline),
               ),
               textInputAction: TextInputAction.next,
-              validator: RegistrationValidators.username,
+              validator: (value) =>
+                  context.validation(RegistrationValidators.username(value)),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextFormField(
               controller: _passwordController,
               enabled: !_submitting,
@@ -89,12 +93,13 @@ class _SignInViewState extends ConsumerState<SignInView> {
               enableSuggestions: false,
               autocorrect: false,
               decoration: InputDecoration(
-                labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outline),
+                labelText: context.tr('Contraseña'),
+                counterText: '',
+                prefixIcon: Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
-                  tooltip: _showPassword
-                      ? 'Ocultar contraseña'
-                      : 'Mostrar contraseña',
+                  tooltip: context.tr(
+                    _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
+                  ),
                   onPressed: _submitting
                       ? null
                       : () => setState(() => _showPassword = !_showPassword),
@@ -106,30 +111,32 @@ class _SignInViewState extends ConsumerState<SignInView> {
               textInputAction: TextInputAction.done,
               obscureText: !_showPassword,
               onFieldSubmitted: (_) => _submit(),
-              validator: RegistrationValidators.signInPassword,
+              validator: (value) => context.validation(
+                RegistrationValidators.signInPassword(value),
+              ),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
-                _error!,
+                context.tr(_error!),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             FilledButton(
               onPressed: _submitting ? null : _submit,
               child: _submitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Ingresar'),
+                  : Text(context.tr('Ingresar')),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextButton(
               onPressed: () => context.go('/sign-up'),
-              child: const Text('¿No tienes cuenta? Regístrate'),
+              child: Text(context.tr('¿No tienes cuenta? Regístrate')),
             ),
           ],
         ),

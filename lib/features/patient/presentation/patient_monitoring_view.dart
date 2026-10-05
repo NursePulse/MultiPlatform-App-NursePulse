@@ -1,7 +1,13 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/clinical_card.dart';
+import '../../../shared/widgets/status_chip.dart';
 
 import '../../clinical_event/domain/clinical_event.dart';
 import '../../iam/domain/user.dart';
@@ -62,8 +68,8 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       lastDate: today,
       currentDate: today,
       initialDateRange: _period,
-      helpText: 'Periodo de signos y eventos',
-      saveText: 'Aplicar',
+      helpText: context.tr('Periodo de signos y eventos'),
+      saveText: context.tr('Aplicar'),
     );
 
     if (mounted && picked != null) {
@@ -74,7 +80,7 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       );
       if (error != null) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error)));
+            .showSnackBar(SnackBar(content: Text(context.tr(error))));
       } else {
         setState(() => _period = picked);
       }
@@ -84,28 +90,26 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
   Widget _error(Object error, VoidCallback retry) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text(describePatientError(error)),
-      TextButton(onPressed: retry, child: const Text('Reintentar')),
+      Text(context.tr(describePatientError(error))),
+      TextButton(onPressed: retry, child: Text(context.tr('Reintentar'))),
     ],
   );
 
   Widget _title(String text) => Padding(
-    padding: const EdgeInsets.only(top: 20, bottom: 8),
-    child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+    padding: EdgeInsets.only(top: 20, bottom: 8),
+    child: Text(
+      context.tr(text),
+      style: Theme.of(context).textTheme.titleMedium,
+    ),
   );
 
-  Widget _card(String title, List<String> lines) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 6),
-          for (final line in lines) Text(line),
-        ],
-      ),
-    ),
+  Widget _card(String title, List<String> lines) => ClinicalCard(
+    children: [
+      Text(title, style: Theme.of(context).textTheme.titleSmall),
+      SizedBox(height: 6),
+      for (final line in lines)
+        Padding(padding: EdgeInsets.only(bottom: 5), child: Text(line)),
+    ],
   );
 
   List<Widget> _history(PatientHistory history) {
@@ -116,29 +120,47 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
     final events = history.events.where((e) => inPeriod(e.occurredAt)).toList();
 
     return [
-      Text(
-        'Alertas activas: ${history.alerts.where((a) => a.isActive).length}',
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          StatusChip(
+            label:
+                'Alertas activas: ${history.alerts.where((a) => a.isActive).length}',
+            palette: history.alerts.any((a) => a.isActive)
+                ? ClinicalColors.alertOpen
+                : ClinicalColors.alertClosed,
+          ),
+          StatusChip(
+            label:
+                'Último riesgo registrado: ${context.tr(history.vitals.isEmpty ? 'Sin registros' : history.vitals.first.riskLabel)}',
+            palette: history.vitals.isEmpty
+                ? ClinicalColors.riskUnassessed
+                : ClinicalColors.risk(
+                    history.vitals.first.riskLevel.name.toUpperCase(),
+                  ),
+          ),
+        ],
       ),
-      Text(
-        'Último riesgo registrado: ${history.vitals.isEmpty ? 'Sin registros' : history.vitals.first.riskLabel}',
-      ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
       Wrap(
         spacing: 8,
         children: [
           OutlinedButton.icon(
             onPressed: _pickPeriod,
-            icon: const Icon(Icons.date_range),
+            icon: Icon(Icons.date_range),
             label: Text(
-              _period == null
-                  ? 'Filtrar signos y eventos'
-                  : '${_date(_period!.start)} – ${_date(_period!.end)}',
+              context.tr(
+                _period == null
+                    ? 'Filtrar signos y eventos'
+                    : '${_date(_period!.start)} – ${_date(_period!.end)}',
+              ),
             ),
           ),
           if (_period != null)
             TextButton(
               onPressed: () => setState(() => _period = null),
-              child: const Text('Ver todo'),
+              child: Text(context.tr('Ver todo')),
             ),
         ],
       ),
@@ -146,50 +168,64 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       TextButton(
         onPressed: () => context.go('/vital-signs'),
         child: Text(
-          ref
-                  .read(patientMonitoringRolesProvider)
-                  .any([kRoleNurse, kRoleAdmin].contains)
-              ? 'Registrar signos vitales'
-              : 'Ver signos vitales',
+          context.tr(
+            ref
+                    .read(patientMonitoringRolesProvider)
+                    .any([kRoleNurse, kRoleAdmin].contains)
+                ? 'Registrar signos vitales'
+                : 'Ver signos vitales',
+          ),
         ),
       ),
-      if (vitals.isEmpty) const Text('No hay signos vitales en este periodo.'),
+      if (vitals.isEmpty)
+        Text(context.tr('No hay signos vitales en este periodo.')),
       for (final v in vitals)
         _card(_time(v.recordedAt), [
-          'Presión: ${v.systolic}/${v.diastolic} mmHg · FC: ${v.heartRate} lpm',
-          'FR: ${v.respiratoryRate} rpm · SpO₂: ${v.oxygenSaturation} %',
-          'Temperatura: ${v.temperature} °C · Riesgo: ${v.riskLabel}',
+          context.tr(
+            'Presión: ${v.systolic}/${v.diastolic} mmHg · FC: ${v.heartRate} lpm',
+          ),
+          context.tr(
+            'FR: ${v.respiratoryRate} rpm · SpO₂: ${v.oxygenSaturation} %',
+          ),
+          context.tr(
+            'Temperatura: ${v.temperature} °C · Riesgo: ${context.tr(v.riskLabel)}',
+          ),
         ]),
       _title('Eventos clínicos (${events.length})'),
       if (events.isEmpty)
-        const Text('No hay eventos clínicos en este periodo.'),
+        Text(context.tr('No hay eventos clínicos en este periodo.')),
       for (final e in events)
         _card(e.title, [
-          '${_time(e.occurredAt)} · ${ClinicalEventType.labelFor(e.eventType)}',
-          'Severidad: ${ClinicalEventSeverity.labelFor(e.severity)}',
+          '${_time(e.occurredAt)} · ${context.tr(ClinicalEventType.labelFor(e.eventType))}',
+          context.tr(
+            'Severidad: ${context.tr(ClinicalEventSeverity.labelFor(e.severity))}',
+          ),
           e.description,
-          if (e.registeredBy.isNotEmpty) 'Registrado por: ${e.registeredBy}',
+          if (e.registeredBy.isNotEmpty)
+            context.tr('Registrado por: ${e.registeredBy}'),
         ]),
       _title('Alertas (${history.alerts.length})'),
       TextButton(
         onPressed: () => context.go('/alerts'),
-        child: const Text('Ver todas las alertas'),
+        child: Text(context.tr('Ver todas las alertas')),
       ),
-      const Text('Las alertas se muestran sin filtro de fechas.'),
-      if (history.alerts.isEmpty) const Text('No hay alertas registradas.'),
+      Text(context.tr('Las alertas se muestran sin filtro de fechas.')),
+      if (history.alerts.isEmpty)
+        Text(context.tr('No hay alertas registradas.')),
       for (final a in history.alerts)
         _card(a.title, [
           a.message,
-          '${a.severityLabel} · ${a.statusLabel}',
+          '${context.tr(a.severityLabel)} · ${context.tr(a.statusLabel)}',
           a.triggeredAt == null
-              ? 'Generada: sin información'
-              : 'Generada: ${_time(a.triggeredAt!)}',
-          if (a.attendedBy != null) 'Atendida por: ${a.attendedBy}',
-          if (a.attendedAt != null) 'Atendida: ${_time(a.attendedAt!)}',
-          if (a.closedBy != null) 'Cerrada por: ${a.closedBy}',
-          if (a.closedAt != null) 'Cerrada: ${_time(a.closedAt!)}',
+              ? context.tr('Generada: sin información')
+              : context.tr('Generada: ${_time(a.triggeredAt!)}'),
+          if (a.attendedBy != null) context.tr('Atendida por: ${a.attendedBy}'),
+          if (a.attendedAt != null)
+            context.tr('Atendida: ${_time(a.attendedAt!)}'),
+          if (a.closedBy != null) context.tr('Cerrada por: ${a.closedBy}'),
+          if (a.closedAt != null) context.tr('Cerrada: ${_time(a.closedAt!)}'),
           if (a.resolutionNotes?.isNotEmpty == true)
-            'Resolución: ${a.resolutionNotes}',
+            context.tr('Resolución: ${a.resolutionNotes}'),
         ]),
     ];
   }
@@ -205,70 +241,111 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seguimiento del paciente'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patients');
-            }
-          },
-        ),
-      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(16),
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: !allowed
-              ? [
-                  const Text(
-                    'No tienes permiso para consultar el seguimiento del paciente.',
-                  ),
-                ]
-              : patient.when(
-                  loading: () => [
-                    const Center(child: CircularProgressIndicator()),
-                  ],
-                  error: (error, _) => [
-                    _error(
-                      error,
-                      () => ref.invalidate(patientDetailProvider(_providerId)),
-                    ),
-                  ],
-                  data: (p) => [
+          padding: EdgeInsets.all(16),
+          physics: AlwaysScrollableScrollPhysics(),
+          children: [
+            ...(!allowed
+                ? [
                     Text(
-                      p.fullName,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      context.tr(
+                        'No tienes permiso para consultar el seguimiento del paciente.',
+                      ),
                     ),
-                    _card('${p.code} · ${p.statusLabel}', [
-                      'Documento: ${p.documentNumber} · ${p.age} años',
-                      'Nacimiento: ${_date(p.birthDate)} · Ingreso: ${_date(p.admissionDate)}',
-                      'Género: ${PatientRules.genders[p.gender] ?? p.gender}',
-                      'Habitación: ${p.roomNumber} · Cama: ${p.bedNumber}',
-                      'Médico tratante: ${p.attendingPhysician}',
-                      'Diagnóstico: ${p.diagnosis}',
-                    ]),
-                    ...?history?.when(
-                      loading: () => [
-                        const LinearProgressIndicator(),
-                        const Text('Cargando historial…'),
-                      ],
-                      error: (error, _) => [
-                        _error(
-                          error,
-                          () => ref.invalidate(
-                            patientHistoryProvider(_providerId),
+                  ]
+                : patient.when(
+                    loading: () => [Center(child: CircularProgressIndicator())],
+                    error: (error, _) => [
+                      _error(
+                        error,
+                        () =>
+                            ref.invalidate(patientDetailProvider(_providerId)),
+                      ),
+                    ],
+                    data: (p) => [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary,
+                            child: Text(p.initials),
                           ),
-                        ),
-                      ],
-                      data: _history,
-                    ),
-                  ],
-                ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  p.fullName,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                Text(p.code),
+                                SizedBox(height: 6),
+                                StatusChip(
+                                  label: context.patientStatus(p.statusLabel),
+                                  palette: ClinicalColors.patientStatus(
+                                    p.statusLabel,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      ClinicalCard(
+                        children: [
+                          InfoField(
+                            'Documento:',
+                            '${p.documentNumber} · ${p.age} ${context.tr('años')}',
+                          ),
+                          InfoGrid(
+                            fields: [
+                              InfoField('Habitación:', p.roomNumber),
+                              InfoField('Cama:', p.bedNumber),
+                              InfoField('Nacimiento:', _date(p.birthDate)),
+                              InfoField('Ingreso:', _date(p.admissionDate)),
+                            ],
+                          ),
+                          Divider(),
+                          InfoField(
+                            'Género:',
+                            context.tr(
+                              PatientRules.genders[p.gender] ?? p.gender,
+                            ),
+                          ),
+                          InfoField('Médico tratante:', p.attendingPhysician),
+                          InfoField('Diagnóstico:', p.diagnosis),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      ...?history?.when(
+                        loading: () => [
+                          LinearProgressIndicator(),
+                          Text(context.tr('Cargando historial…')),
+                        ],
+                        error: (error, _) => [
+                          _error(
+                            error,
+                            () => ref.invalidate(
+                              patientHistoryProvider(_providerId),
+                            ),
+                          ),
+                        ],
+                        data: _history,
+                      ),
+                    ],
+                  )),
+          ],
         ),
       ),
     );

@@ -1,5 +1,9 @@
 # Interfaz adaptable de NursePulse
 
+La revisión posterior del diseño aprobado, los colores por rol y el selector
+ES/EN están documentados en [ui-role-language-validation.md](ui-role-language-validation.md).
+Las comprobaciones siguientes corresponden al primer rediseño integrado en el PR #16.
+
 ## Alcance
 
 Implementación del modelo visual aprobado por el usuario, con bordes más

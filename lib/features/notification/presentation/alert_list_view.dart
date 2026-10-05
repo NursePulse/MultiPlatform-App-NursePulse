@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../shared/widgets/page_title.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../../shared/widgets/clinical_card.dart';
 import '../../patient/application/patient_notifier.dart';
 import '../application/alert_notifier.dart';
 import '../domain/alert.dart';
@@ -46,8 +49,9 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
       await action();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(describeAlertError(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr(describeAlertError(e)))),
+        );
       }
     }
   }
@@ -63,60 +67,63 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
       floatingActionButton: allowed
           ? FloatingActionButton.extended(
               onPressed: state.saving ? null : () => showAlertForm(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Registrar alerta'),
+              icon: Icon(Icons.add),
+              label: Text(context.tr('Registrar alerta')),
             )
           : null,
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: ListPageBody(
           header: [
-            const PageTitle('Alertas'),
-            Text(
-              '${state.alerts.where((a) => a.isActive).length} alertas pendientes',
+            PageTitle(
+              'Alertas',
+              subtitle:
+                  '${state.alerts.where((a) => a.isActive).length} alertas pendientes',
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Wrap(
                 spacing: 8,
                 children: [
                   for (final filter in AlertFilter.values)
                     ChoiceChip(
-                      label: Text(filter.label),
+                      label: Text(context.tr(filter.label)),
                       selected: _filter == filter,
                       onSelected: (_) => setState(() => _filter = filter),
                     ),
                 ],
               ),
             ),
-            if (state.loading || state.saving) const LinearProgressIndicator(),
+            if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.error!)),
+                    Expanded(child: Text(context.tr(state.error!))),
                     TextButton(
                       onPressed: state.loading || state.saving
                           ? null
                           : () =>
                                 ref.read(alertNotifierProvider.notifier).load(),
-                      child: const Text('Reintentar'),
+                      child: Text(context.tr('Reintentar')),
                     ),
                   ],
                 ),
               ),
             if (state.warning != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.warning!)),
+                    Expanded(child: Text(context.tr(state.warning!))),
                     IconButton(
-                      tooltip: 'Cerrar aviso',
+                      tooltip: context.tr('Cerrar aviso'),
                       onPressed: () => ref
                           .read(alertNotifierProvider.notifier)
                           .clearWarning(),
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close),
                     ),
                   ],
                 ),
@@ -126,21 +133,23 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
             onRefresh: () => ref.read(alertNotifierProvider.notifier).load(),
             child: alerts.isEmpty
                 ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
+                    physics: AlwaysScrollableScrollPhysics(),
+                    children: [
                       Padding(
                         padding: EdgeInsets.all(24),
-                        child: Text('No hay alertas en este filtro.'),
+                        child: Text(
+                          context.tr('No hay alertas en este filtro.'),
+                        ),
                       ),
                     ],
                   )
                 : ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 100),
                     itemCount: alerts.length,
                     itemBuilder: (context, index) {
                       final alert = alerts[index];
-                      var name = 'Paciente #${alert.patientId}';
+                      var name = context.tr('Paciente #${alert.patientId}');
                       for (final patient in patients) {
                         if (patient.id == alert.patientId) {
                           name = patient.fullName;
@@ -153,95 +162,129 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                         '${alert.id}:CLOSED',
                       );
                       final pending = state.savingId == alert.id;
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
+                      return ClinicalCard(
+                        accent: alert.isCritical
+                            ? ClinicalColors.dangerText
+                            : null,
+                        children: [
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                name,
-                                style: Theme.of(context).textTheme.titleMedium,
+                              CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                foregroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                                child: Icon(Icons.person_outline),
                               ),
-                              Text(alert.title),
-                              Text(alert.description),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  StatusChip(
-                                    label: alert.severityLabel,
-                                    palette: _severityPalette(alert.severity),
-                                  ),
-                                  StatusChip(
-                                    label: alert.statusLabel,
-                                    palette: ClinicalColors.alertStatus(
-                                      alert.status.wireValue,
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                alert.triggeredAt == null
-                                    ? 'Generada: sin información'
-                                    : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
-                              ),
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  TextButton(
-                                    onPressed: () => showDialog<void>(
-                                      context: context,
-                                      builder: (_) =>
-                                          AlertDetailDialog(alertId: alert.id),
-                                    ),
-                                    child: const Text('Ver detalle'),
-                                  ),
-                                  if (allowed &&
-                                      alert.status == AlertStatus.open &&
-                                      !attendConfirmed)
-                                    TextButton(
-                                      onPressed: state.saving
-                                          ? null
-                                          : () => _handle(
-                                              () => ref
-                                                  .read(
-                                                    alertNotifierProvider
-                                                        .notifier,
-                                                  )
-                                                  .attend(alert.id),
-                                            ),
-                                      child: Text(
-                                        pending ? 'Procesando…' : 'Atender',
+                                    Text(
+                                      context.tr(
+                                        alert.triggeredAt == null
+                                            ? 'Generada: sin información'
+                                            : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
                                       ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
                                     ),
-                                  if (canClose &&
-                                      alert.status == AlertStatus.attended &&
-                                      !closeConfirmed)
-                                    TextButton(
-                                      onPressed: state.saving
-                                          ? null
-                                          : () => _handle(
-                                              () => ref
-                                                  .read(
-                                                    alertNotifierProvider
-                                                        .notifier,
-                                                  )
-                                                  .close(alert.id),
-                                            ),
-                                      child: Text(
-                                        pending ? 'Procesando…' : 'Cerrar',
-                                      ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
-                              if (alert.status == AlertStatus.attended &&
-                                  !canClose)
-                                const Text('Pendiente de cierre médico.'),
                             ],
                           ),
-                        ),
+                          SizedBox(height: 12),
+                          Text(
+                            alert.title,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          SizedBox(height: 4),
+                          Text(alert.description),
+                          SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              StatusChip(
+                                label: alert.severityLabel,
+                                palette: _severityPalette(alert.severity),
+                              ),
+                              StatusChip(
+                                label: alert.statusLabel,
+                                palette: ClinicalColors.alertStatus(
+                                  alert.status.wireValue,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              TextButton(
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) =>
+                                      AlertDetailDialog(alertId: alert.id),
+                                ),
+                                child: Text(context.tr('Ver detalle')),
+                              ),
+                              if (allowed &&
+                                  alert.status == AlertStatus.open &&
+                                  !attendConfirmed)
+                                FilledButton(
+                                  onPressed: state.saving
+                                      ? null
+                                      : () => _handle(
+                                          () => ref
+                                              .read(
+                                                alertNotifierProvider.notifier,
+                                              )
+                                              .attend(alert.id),
+                                        ),
+                                  child: Text(
+                                    context.tr(
+                                      pending ? 'Procesando…' : 'Atender',
+                                    ),
+                                  ),
+                                ),
+                              if (canClose &&
+                                  alert.status == AlertStatus.attended &&
+                                  !closeConfirmed)
+                                FilledButton(
+                                  onPressed: state.saving
+                                      ? null
+                                      : () => _handle(
+                                          () => ref
+                                              .read(
+                                                alertNotifierProvider.notifier,
+                                              )
+                                              .close(alert.id),
+                                        ),
+                                  child: Text(
+                                    context.tr(
+                                      pending ? 'Procesando…' : 'Cerrar',
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (alert.status == AlertStatus.attended && !canClose)
+                            Text(context.tr('Pendiente de cierre médico.')),
+                        ],
                       );
                     },
                   ),

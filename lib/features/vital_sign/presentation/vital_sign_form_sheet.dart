@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,7 +12,7 @@ Future<void> showVitalSignFormSheet(BuildContext context) =>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const VitalSignFormSheet(),
+      builder: (_) => VitalSignFormSheet(),
     );
 
 class VitalSignFormSheet extends ConsumerStatefulWidget {
@@ -59,7 +61,7 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
     try {
       final user = ref.read(vitalSignUserProvider);
       if (user == null) {
-        throw const FormatException('Inicia sesión de nuevo.');
+        throw FormatException('Inicia sesión de nuevo.');
       }
 
       final command = VitalSignRules.fromForm(
@@ -79,7 +81,9 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
         final warning = ref.read(vitalSignNotifierProvider).warning;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(warning ?? 'Signos vitales guardados.')),
+          SnackBar(
+            content: Text(context.tr(warning ?? 'Signos vitales guardados.')),
+          ),
         );
 
         Navigator.of(context).pop();
@@ -100,15 +104,15 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
     bool integer = true,
     bool pressure = false,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: 12),
     child: TextFormField(
       key: ValueKey(key),
       controller: c,
       enabled: !_busy,
       keyboardType: TextInputType.numberWithOptions(decimal: !integer),
       decoration: InputDecoration(
-        labelText: label,
-        helperText: '$min–$max${integer ? ' · Entero' : ''}',
+        labelText: context.tr(label),
+        helperText: context.tr('$min–$max${integer ? ' · Entero' : ''}'),
       ),
       autovalidateMode: AutovalidateMode.onUserInteraction,
       validator: (v) {
@@ -159,23 +163,25 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Registrar signos vitales',
+                  context.tr('Registrar signos vitales'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   key: ValueKey(
                     'vital-patient-${patients.patients.map((p) => p.id).join(',')}',
                   ),
                   initialValue: validSelection ? _patientId : null,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Paciente'),
+                  decoration: InputDecoration(
+                    labelText: context.tr('Paciente'),
+                  ),
                   items: [
                     for (final p in patients.patients)
                       DropdownMenuItem(
                         value: p.id,
                         child: Text(
-                          '${p.fullName} · Hab. ${p.roomNumber}',
+                          context.tr('${p.fullName} · Hab. ${p.roomNumber}'),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -183,23 +189,24 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
                   onChanged: _busy
                       ? null
                       : (value) => setState(() => _patientId = value),
-                  validator: (value) =>
-                      value == null ||
-                          !patients.patients.any((p) => p.id == value)
-                      ? 'Selecciona un paciente disponible.'
-                      : null,
+                  validator: (value) => context.validation(
+                    value == null ||
+                            !patients.patients.any((p) => p.id == value)
+                        ? 'Selecciona un paciente disponible.'
+                        : null,
+                  ),
                 ),
-                if (patients.loading) const LinearProgressIndicator(),
-                if (patients.error != null) Text(patients.error!),
+                if (patients.loading) LinearProgressIndicator(),
+                if (patients.error != null) Text(context.tr(patients.error!)),
                 if (patients.error != null || patients.patients.isEmpty)
                   TextButton(
                     onPressed: _busy || patients.loading
                         ? null
                         : () =>
                               ref.read(patientNotifierProvider.notifier).load(),
-                    child: const Text('Recargar pacientes'),
+                    child: Text(context.tr('Recargar pacientes')),
                   ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _number(_heart, 'FC (lpm)', 'vital-heart', 20, 250),
                 _number(_respiratory, 'FR (rpm)', 'vital-respiratory', 5, 80),
                 _number(
@@ -227,18 +234,20 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
                   integer: false,
                 ),
                 if (!canRecord)
-                  const Text(
-                    'No tienes permiso para registrar signos vitales.',
+                  Text(
+                    context.tr(
+                      'No tienes permiso para registrar signos vitales.',
+                    ),
                   ),
                 if (_error != null)
                   Text(
-                    _error!,
+                    context.tr(_error!),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 FilledButton(
-                  key: const ValueKey('vital-save'),
+                  key: ValueKey('vital-save'),
                   onPressed:
                       _busy ||
                           saving ||
@@ -247,11 +256,13 @@ class _VitalSignFormSheetState extends ConsumerState<VitalSignFormSheet> {
                           patients.patients.isEmpty
                       ? null
                       : _submit,
-                  child: Text(_busy ? 'Guardando…' : 'Guardar signos vitales'),
+                  child: Text(
+                    context.tr(_busy ? 'Guardando…' : 'Guardar signos vitales'),
+                  ),
                 ),
                 TextButton(
                   onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(context.tr('Cancelar')),
                 ),
               ],
             ),

@@ -83,10 +83,13 @@ void main() {
       addTearDown(container.dispose);
       await mount(tester, container);
       expect(find.textContaining('Diagnóstico:'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Reintentar'), 250);
+      await tester.pumpAndSettle();
       expect(find.text('Reintentar'), findsOneWidget);
       failing = false;
       await tester.tap(find.text('Reintentar'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Signos vitales (0)'), 250);
       expect(find.text('Signos vitales (0)'), findsOneWidget);
       expect(paths, hasLength(7));
       expect(paths.where((path) => path == 'GET /patients/1'), hasLength(1));
@@ -119,6 +122,7 @@ void main() {
       fails = false;
       await tester.tap(find.text('Reintentar'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Signos vitales (0)'), 250);
       expect(find.text('Signos vitales (0)'), findsOneWidget);
       expect(paths.where((p) => p.contains('/patients/1')), hasLength(5));
     },
