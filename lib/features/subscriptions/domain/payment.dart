@@ -14,6 +14,7 @@ class PaymentRequest {
   final String billingEmail;
   final String cardholderName;
   final String cardLastFour;
+  String get currency => 'USD';
 }
 
 class PaymentReceipt {

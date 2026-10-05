@@ -19,7 +19,8 @@ extension AlertSeverityX on AlertSeverity {
     'MEDIUM' || 'MODERATE' => AlertSeverity.medium,
     'HIGH' => AlertSeverity.high,
     'CRITICAL' => AlertSeverity.critical,
-    _ => AlertSeverity.low,
+    'LOW' => AlertSeverity.low,
+    _ => throw FormatException('Severidad de alerta desconocida: $value'),
   };
 }
 
@@ -41,7 +42,8 @@ extension AlertStatusX on AlertStatus {
   static AlertStatus fromWire(String value) => switch (value) {
     'ATTENDED' || 'ACKNOWLEDGED' => AlertStatus.attended,
     'CLOSED' || 'RESOLVED' => AlertStatus.closed,
-    _ => AlertStatus.open,
+    'OPEN' => AlertStatus.open,
+    _ => throw FormatException('Estado de alerta desconocido: $value'),
   };
 }
 
@@ -98,7 +100,7 @@ class Alert {
   final String description;
   final AlertStatus status;
   final String triggeredBy;
-  final DateTime triggeredAt;
+  final DateTime? triggeredAt;
   final String? attendedBy;
   final DateTime? attendedAt;
   final String? closedBy;
@@ -106,24 +108,17 @@ class Alert {
   final DateTime? closedAt;
 
   factory Alert.fromJson(Map<String, dynamic> json) {
-    // AlertResource has no createdAt/triggeredAt field at all — mirrors
-    // alert-assembler.ts's fallback chain (triggeredAt ?? attendedAt ??
-    // closedAt ?? now), which avoids crashing on every single alert.
-    final triggeredAtRaw =
-        json['triggeredAt'] ?? json['attendedAt'] ?? json['closedAt'];
-    final triggeredAt = triggeredAtRaw != null
-        ? DateTime.tryParse(triggeredAtRaw as String) ?? DateTime.now()
-        : DateTime.now();
-
     return Alert(
-      id: json['id'].toString(),
-      patientId: json['patientId'].toString(),
+      id: _id(json['id']),
+      patientId: _id(json['patientId']),
       type: json['type'] as String,
       severity: AlertSeverityX.fromWire(json['severity'] as String),
       description: json['description'] as String,
       status: AlertStatusX.fromWire(json['status'] as String),
       triggeredBy: json['triggeredBy'] as String,
-      triggeredAt: triggeredAt,
+      // La API obtiene triggeredAt de createdAt persistido. Si falta, se
+      // muestra sin información; attendedAt/closedAt no son la creación.
+      triggeredAt: _date(json['triggeredAt']),
       attendedBy: json['attendedBy'] as String?,
       attendedAt: json['attendedAt'] != null
           ? DateTime.tryParse(json['attendedAt'] as String)
@@ -135,6 +130,18 @@ class Alert {
           : null,
     );
   }
+
+  static String _id(Object? value) {
+    final text = value?.toString() ?? '';
+    final number = int.tryParse(text);
+    if (!RegExp(r'^\d+$').hasMatch(text) || number == null || number <= 0) {
+      throw const FormatException('La API devolvió un identificador inválido.');
+    }
+    return number.toString();
+  }
+
+  static DateTime? _date(Object? value) =>
+      value is String ? DateTime.tryParse(value) : null;
 
   String get title => AlertType.label(type);
 

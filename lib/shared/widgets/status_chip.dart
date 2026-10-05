@@ -17,15 +17,15 @@ class StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.foreground.withValues(alpha: 0.18)),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: palette.foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }

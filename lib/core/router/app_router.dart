@@ -33,8 +33,6 @@ class _SplashScreen extends StatelessWidget {
       const Scaffold(body: Center(child: CircularProgressIndicator()));
 }
 
-const _headAdminNurseRoles = [kRoleHeadAdminNurse];
-
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefreshNotifier(ref);
 
@@ -57,10 +55,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (loggingIn || location == '/') return '/dashboard';
 
-      if ((location == '/reports' ||
-              location == '/audit' ||
-              location == '/users') &&
-          !auth.user!.hasAnyRole(_headAdminNurseRoles)) {
+      final requiredRoles = switch (location) {
+        '/audit' || '/reports' => [kRoleAdmin, kRoleDoctor],
+        '/users' => [kRoleAdmin],
+        _ => <String>[],
+      };
+
+      if (requiredRoles.isNotEmpty && !auth.user!.hasAnyRole(requiredRoles)) {
         return '/dashboard';
       }
       return null;

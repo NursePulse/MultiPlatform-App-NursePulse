@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class AuditLog {
   const AuditLog({
     required this.id,
@@ -19,16 +21,62 @@ class AuditLog {
   final String? patientId;
   final Object? metadata;
 
-  factory AuditLog.fromJson(Map<String, dynamic> json) => AuditLog(
-    id: json['id'].toString(),
-    entityType: json['entityType'] as String,
-    entityId: json['entityId'].toString(),
-    actionType: json['actionType'] as String,
-    performedBy: json['performedBy'] as String,
-    performedAt: DateTime.parse(json['performedAt'] as String),
-    patientId: json['patientId']?.toString(),
-    metadata: json['metadata'],
-  );
+  factory AuditLog.fromJson(Map<String, dynamic> json) {
+    String text(String key) {
+      final value = json[key];
+      if ((value is! String &&
+              !(['id', 'entityId'].contains(key) && value is int)) ||
+          value.toString().trim().isEmpty) {
+        throw FormatException('La auditoría no contiene $key válido.');
+      }
+      return value.toString().trim();
+    }
+
+    final id = text('id');
+    final number = int.tryParse(id);
+    final date = DateTime.tryParse(text('performedAt'));
+    if (!RegExp(r'^\d+$').hasMatch(id) ||
+        number == null ||
+        number <= 0 ||
+        date == null) {
+      throw const FormatException(
+        'La auditoría no contiene un ID y fecha válidos.',
+      );
+    }
+    return AuditLog(
+      id: number.toString(),
+      entityType: text('entityType'),
+      entityId: text('entityId'),
+      actionType: text('actionType'),
+      performedBy: text('performedBy'),
+      performedAt: date,
+      patientId: json['patientId']?.toString(),
+      metadata: json['metadata'],
+    );
+  }
+
+  String get code => 'AL-$id';
+
+  String get description {
+    Object? value = metadata;
+    if (value is String) {
+      final original = value;
+      try {
+        value = jsonDecode(value);
+      } on FormatException {
+        return original.trim().isEmpty ? actionLabel : original.trim();
+      }
+    }
+    if (value is Map) {
+      for (final key in ['description', 'title', 'message', 'eventType']) {
+        final candidate = value[key];
+        if (candidate is String && candidate.trim().isNotEmpty) {
+          return candidate.trim();
+        }
+      }
+    }
+    return '$actionLabel · $entityLabel #$entityId';
+  }
 
   String get actionLabel => switch (actionType) {
     'CREATE' => 'Creación',
@@ -53,6 +101,10 @@ class AuditLog {
     'SBAR_HANDOVER' || 'HANDOVER' => 'Traspaso SBAR',
     'REPORT' => 'Reporte',
     'AUDIT_LOG' => 'Auditoría',
-    _ => 'Sistema',
+    'USER' => 'Usuario',
+    'MEDICATION_ORDER' => 'Orden de medicación',
+    'CARE_PLAN' => 'Plan de cuidados',
+    'SYSTEM' => 'Sistema',
+    _ => entityType,
   };
 }

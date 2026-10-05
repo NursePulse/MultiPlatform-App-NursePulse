@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config/app_config.dart';
+import '../../core/theme/app_theme.dart';
+import 'brand_mark.dart';
 import '../../features/iam/application/auth_notifier.dart';
-import '../../features/iam/application/view_mode_notifier.dart';
 import '../../features/iam/domain/user.dart';
 
 class _NavItem {
@@ -13,12 +13,10 @@ class _NavItem {
   final String path;
   final String label;
   final IconData icon;
+  final List<String>? visibleFor;
 
-  /// null means always visible.
-  final List<ViewMode>? visibleFor;
-
-  bool visible(ViewMode mode) =>
-      visibleFor == null || visibleFor!.contains(mode);
+  bool visible(User? user) =>
+      visibleFor == null || user?.hasAnyRole(visibleFor!) == true;
 }
 
 const _navItems = [
@@ -32,19 +30,19 @@ const _navItems = [
     '/reports',
     'Reportes',
     Icons.bar_chart_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin, kRoleDoctor],
   ),
   _NavItem(
     '/audit',
     'Auditoría',
     Icons.fact_check_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin, kRoleDoctor],
   ),
   _NavItem(
     '/users',
     'Usuarios',
     Icons.admin_panel_settings_rounded,
-    visibleFor: [ViewMode.headAdminNurse],
+    visibleFor: [kRoleAdmin],
   ),
   _NavItem('/subscriptions', 'Suscripciones', Icons.workspace_premium_rounded),
 ];
@@ -64,9 +62,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final viewMode = ref.watch(viewModeProvider);
     final auth = ref.watch(authNotifierProvider);
-    final items = _navItems.where((item) => item.visible(viewMode)).toList();
+    final viewMode = ViewModeX.fromRole(auth.user?.primaryRole ?? '');
+    final items = _navItems.where((item) => item.visible(auth.user)).toList();
     final selectedIndex = items.indexWhere(
       (item) => widget.currentPath.startsWith(item.path),
     );
@@ -89,29 +87,15 @@ class _AppShellState extends ConsumerState<AppShell> {
         key: _scaffoldKey,
         body: Row(
           children: [
-            NavigationRail(
-              extended: MediaQuery.sizeOf(context).width >= 1200,
-              selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-              onDestinationSelected: onSelect,
-              leading: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Icon(Icons.favorite_rounded, size: 32),
-              ),
-              destinations: [
-                for (final item in items)
-                  NavigationRailDestination(
-                    icon: Icon(item.icon),
-                    label: Text(item.label),
-                  ),
-              ],
+            SizedBox(
+              width: 240,
+              child: _navigation(items, selectedIndex, onSelect),
             ),
-            const VerticalDivider(width: 1),
             Expanded(
               child: Column(
                 children: [
                   header,
-                  const Divider(height: 1),
-                  Expanded(child: widget.child),
+                  Expanded(child: _content()),
                 ],
               ),
             ),
@@ -123,42 +107,96 @@ class _AppShellState extends ConsumerState<AppShell> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                child: Text(
-                  AppConfig.appName,
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              const Divider(height: 1),
-              for (var i = 0; i < items.length; i++)
-                ListTile(
-                  leading: Icon(items[i].icon),
-                  title: Text(items[i].label),
-                  selected: i == selectedIndex,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onSelect(i);
-                  },
-                ),
-            ],
+        child: _navigation(items, selectedIndex, (index) {
+          Navigator.of(context).pop();
+          onSelect(index);
+        }),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: switch (widget.currentPath) {
+          final path when path.startsWith('/dashboard') => 0,
+          final path when path.startsWith('/patients') => 1,
+          final path when path.startsWith('/alerts') => 2,
+          _ => 3,
+        },
+        onDestinationSelected: (index) {
+          if (index == 3) {
+            _scaffoldKey.currentState?.openDrawer();
+          } else {
+            context.go(['/dashboard', '/patients', '/alerts'][index]);
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.grid_view_rounded),
+            label: 'Inicio',
           ),
-        ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_rounded),
+            label: 'Pacientes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_active_rounded),
+            label: 'Alertas',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz_rounded),
+            label: 'Más',
+          ),
+        ],
       ),
       body: Column(
         children: [
           header,
-          const Divider(height: 1),
-          Expanded(child: widget.child),
+          Expanded(child: _content()),
         ],
       ),
     );
   }
+
+  Widget _content() => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 1200),
+      child: widget.child,
+    ),
+  );
+
+  Widget _navigation(
+    List<_NavItem> items,
+    int selectedIndex,
+    ValueChanged<int> onSelect,
+  ) => Material(
+    color: AppTheme.evergreen,
+    child: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 0, 4, 24),
+            child: BrandWordmark(light: true),
+          ),
+          for (var i = 0; i < items.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: Icon(items[i].icon),
+                title: Text(items[i].label),
+                selected: i == selectedIndex,
+                selectedTileColor: AppTheme.primarySurface,
+                selectedColor: AppTheme.primaryDark,
+                textColor: Colors.white,
+                iconColor: const Color(0xFFD6E7E3),
+                onTap: () => onSelect(i),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ShellHeader extends StatelessWidget {
@@ -178,15 +216,14 @@ class _ShellHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final roleBadge = CircleAvatar(
-      radius: 10,
-      backgroundColor: scheme.primary,
+      radius: 16,
+      backgroundColor: AppTheme.primarySurface,
       child: Text(
         viewMode.shortBadge,
         style: TextStyle(
-          fontSize: 9,
-          color: scheme.onPrimary,
+          fontSize: 11,
+          color: AppTheme.primaryDark,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -221,37 +258,48 @@ class _ShellHeader extends StatelessWidget {
           child: const Text('Cerrar sesión'),
         ),
       ],
-      child: isWide
-          ? Chip(
-              avatar: roleBadge,
-              label: Text(
-                username.isEmpty ? viewMode.label : username,
-                overflow: TextOverflow.ellipsis,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            roleBadge,
+            if (isWide) ...[
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: Text(
+                  username.isEmpty ? viewMode.label : username,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-            )
-          : Padding(padding: const EdgeInsets.all(8), child: roleBadge),
+            ],
+          ],
+        ),
+      ),
     );
 
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            if (onOpenDrawer != null)
-              IconButton(icon: const Icon(Icons.menu), onPressed: onOpenDrawer)
-            else
-              const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                AppConfig.appName,
-                style: Theme.of(context).textTheme.titleMedium,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-            accountMenu,
-          ],
+    return Material(
+      color: AppTheme.evergreen,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              if (onOpenDrawer != null)
+                IconButton(
+                  tooltip: 'Abrir menú',
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: onOpenDrawer,
+                )
+              else
+                const SizedBox(width: 8),
+              Expanded(child: const BrandWordmark(light: true)),
+              accountMenu,
+            ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,9 @@
 /// Faithful port of payment-validation.ts.
 library;
 
+import '../domain/payment.dart';
+import '../domain/plan.dart';
+
 enum CardBrand { visa, mastercard, amex, card }
 
 enum BillingDocumentType { dni, ruc }
@@ -78,4 +81,59 @@ bool isValidBillingDocument(BillingDocumentType type, String value) {
   return type == BillingDocumentType.dni
       ? digits.length == 8
       : digits.length == 11;
+}
+
+class CheckoutRules {
+  static String? name(String? value) {
+    final text = value?.trim() ?? '';
+    return text.length < 3 || text.length > 80
+        ? 'El titular debe tener entre 3 y 80 caracteres.'
+        : null;
+  }
+
+  static String? email(String? value) {
+    final text = value?.trim() ?? '';
+    return text.length > 120 ||
+            !RegExp(
+              r"^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+            ).hasMatch(text)
+        ? 'Ingresa un correo válido de hasta 120 caracteres.'
+        : null;
+  }
+
+  static String? document(BillingDocumentType type, String? value) =>
+      RegExp(r'^\d+$').hasMatch(value?.trim() ?? '') &&
+          isValidBillingDocument(type, value!.trim())
+      ? null
+      : 'El ${type == BillingDocumentType.dni ? 'DNI' : 'RUC'} debe tener ${type == BillingDocumentType.dni ? 8 : 11} dígitos.';
+  static PaymentRequest fromForm({
+    required Plan plan,
+    required String nameValue,
+    required String emailValue,
+    required BillingDocumentType documentType,
+    required String documentNumber,
+    required String cardNumber,
+    required String expiry,
+    required String securityCode,
+    DateTime? today,
+  }) {
+    for (final error in [
+      name(nameValue),
+      email(emailValue),
+      document(documentType, documentNumber),
+      isValidCardNumber(cardNumber) ? null : 'Número de tarjeta inválido.',
+      isValidFutureExpiry(expiry, today) ? null : 'Vencimiento inválido.',
+      isValidSecurityCode(securityCode) ? null : 'CVV inválido.',
+    ]) {
+      if (error != null) throw FormatException(error);
+    }
+    final digits = onlyDigits(cardNumber);
+    return PaymentRequest(
+      planId: plan.id,
+      amount: plan.monthlyPrice,
+      billingEmail: emailValue.trim(),
+      cardholderName: nameValue.trim(),
+      cardLastFour: digits.substring(digits.length - 4),
+    );
+  }
 }

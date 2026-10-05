@@ -26,13 +26,30 @@ flutter devices
 
 ## Ejecutar con la API existente
 
-`API_BASE_URL` debe incluir `/api/v1`. Para usar el despliegue configurado en la web:
+Por defecto la app usa el backend de producción
+(`https://backend-nursepulse-qfct.onrender.com/api/v1`), así que basta con:
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=https://backend-nursepulse-qfct.onrender.com/api/v1
+flutter run
 ```
 
-Si ejecutas el backend en tu equipo:
+Ten en cuenta que en ese modo los registros y los cambios se hacen sobre datos
+reales de producción, y que registrar una cuenta envía un correo de
+verificación: no podrás iniciar sesión hasta abrir el enlace.
+
+Si en Chrome (`flutter run -d chrome`) aparece "No se pudo conectar con el
+servidor", es CORS: el backend solo acepta los orígenes locales
+`http://localhost:4200` y los dominios de Vercel/Netlify. Fija el puerto:
+
+```powershell
+flutter run -d chrome --web-port=4200
+```
+
+La aplicación en Android o iOS no depende de CORS.
+
+### Usar un backend local
+
+`API_BASE_URL` debe incluir `/api/v1`. Si ejecutas el backend en tu equipo:
 
 | Destino | URL local |
 | --- | --- |
@@ -59,6 +76,7 @@ no demuestra compatibilidad validada.
 dart format lib test
 flutter analyze
 flutter test
+git diff --check
 flutter build apk --release --dart-define=API_BASE_URL=https://backend-nursepulse-qfct.onrender.com/api/v1
 ```
 
@@ -68,13 +86,12 @@ ficticios y API simulada; documenta aparte las pruebas manuales de integración.
 
 ## Trabajo por ramas
 
-El primer bloque es `chore/mobile-foundation`. Tras integrar su PR, cada sección
-parte del `main` actualizado:
+Cada sección parte de `test` actualizado después de integrar la anterior:
 
 ```powershell
-git switch main
-git pull --ff-only origin main
-git switch -c feature/auth-validation
+git switch test
+git pull --ff-only origin test
+git switch -c feature/sbar-validation
 ```
 
 Comprueba antes `git status` y conserva los cambios en curso. Cada PR incluye
@@ -82,9 +99,17 @@ reglas por campo, permisos, pruebas y resultados reales. No declares completo
 un módulo cuya integración no se comprobó. Consulta la
 [matriz y secuencia de ramas](docs/mobile-baseline.md).
 
+Tras pasar formato, análisis, pruebas, `git diff --check` y compilación release,
+el desarrollador hace commit y push de los archivos de la fase sin pedir otra
+confirmación. Entrega el resumen, la evidencia y el texto del PR hacia `test`.
+Si el PR ya existe, comprueba la CI del último commit publicado. El tester
+verifica el APK y la integración manual antes del merge; `test` pasa a `main`
+después de la revisión y autorización. Las instrucciones persistentes están
+en [AGENTS.md](AGENTS.md).
+
 ## Integración continua y distribución
 
-En PRs y pushes a `main`, la CI instala Flutter 3.47.2, comprueba formato,
+En PRs y pushes a `main` y `test`, la CI instala Flutter 3.47.2, comprueba formato,
 ejecuta análisis y pruebas y construye el APK Android. `Verify Flutter` debe
 pasar antes de distribuir.
 
