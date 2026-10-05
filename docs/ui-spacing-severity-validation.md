@@ -4,6 +4,10 @@ Fecha: 05/10/2026. Rama: `feature/ui-spacing-severity`.
 Base: `test` actualizado, `5c3176e`; PR #19 de interfaz/idiomas y PR #18
 del icono confirmados como integrados antes de comenzar.
 
+Este documento registra la primera implementación aprobada. Los ajustes
+posteriores del mismo PR #22, las 954 pruebas y el APK actualizado están en
+[Alertas: gravedades, filtros y avisos](alert-inbox-filters-validation.md).
+
 ## Cambios aprobados
 
 - Login y Registro conservan su implementación y diseño anteriores.

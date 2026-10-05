@@ -343,9 +343,9 @@ class DashboardView extends ConsumerWidget {
                           for (final alert
                               in data.alerts.where((a) => a.isActive).take(5))
                             ClinicalCard(
-                              accent: ClinicalColors.severity(
+                              accent: ClinicalColors.severityAccent(
                                 alert.severity.wireValue,
-                              ).foreground,
+                              ),
                               children: [
                                 Text(
                                   data.patients

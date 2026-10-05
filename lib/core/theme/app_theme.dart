@@ -396,6 +396,15 @@ class ClinicalColors {
     _ => riskUnassessed,
   };
 
+  // Bright rails distinguish severity; chip text keeps its darker contrast.
+  static Color severityAccent(String value) => switch (value) {
+    'CRITICAL' => const Color(0xFFDC2626),
+    'HIGH' => const Color(0xFFF97316),
+    'MEDIUM' || 'MODERATE' => const Color(0xFFEAB308),
+    'LOW' => const Color(0xFF15803D),
+    _ => riskUnassessed.foreground,
+  };
+
   // Workflow status stays separate from the severity rail and severity pill.
   static const ChipPalette alertOpen = ChipPalette(
     Color(0xFFF1F5F9),

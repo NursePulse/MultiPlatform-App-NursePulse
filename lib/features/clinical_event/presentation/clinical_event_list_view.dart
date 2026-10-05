@@ -126,7 +126,7 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                   Padding(
                     padding: EdgeInsets.zero,
                     child: ClinicalCard(
-                      accent: _severityPalette(event.severity).foreground,
+                      accent: ClinicalColors.severityAccent(event.severity),
                       children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

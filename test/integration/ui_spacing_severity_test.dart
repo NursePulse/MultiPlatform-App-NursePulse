@@ -144,8 +144,9 @@ void main() {
                       as Border;
               expect(
                 border.left.color,
-                ClinicalColors.severity(severities[i]).foreground,
+                ClinicalColors.severityAccent(severities[i]),
               );
+              expect(border.left.width, 5);
               final attend = find.descendant(
                 of: card,
                 matching: find.widgetWithText(

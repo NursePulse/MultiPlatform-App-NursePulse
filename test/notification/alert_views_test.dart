@@ -330,6 +330,10 @@ void main() {
       expect(find.textContaining('Ana'), findsOneWidget);
       await tester.tap(find.text('Moderadas'));
       await tester.pumpAndSettle();
+      expect(find.text('No hay alertas en este filtro.'), findsOneWidget);
+      expect(find.text('Baja'), findsNothing);
+      await tester.tap(find.text('Bajas'));
+      await tester.pumpAndSettle();
       expect(find.text('Baja'), findsOneWidget);
       expect(find.text('Crítica'), findsNothing);
       expect(find.text('Cerrada'), findsNothing);

@@ -219,7 +219,7 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
           e.description,
           if (e.registeredBy.isNotEmpty)
             context.tr('Registrado por: ${e.registeredBy}'),
-        ], accent: ClinicalColors.severity(e.severity).foreground),
+        ], accent: ClinicalColors.severityAccent(e.severity)),
       _title('Alertas (${history.alerts.length})'),
       TextButton(
         onPressed: () => context.go('/alerts'),
@@ -246,7 +246,7 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
             if (a.resolutionNotes?.isNotEmpty == true)
               context.tr('Resolución: ${a.resolutionNotes}'),
           ],
-          accent: ClinicalColors.severity(a.severity.wireValue).foreground,
+          accent: ClinicalColors.severityAccent(a.severity.wireValue),
           tags: [
             StatusChip(
               label: a.severityLabel,

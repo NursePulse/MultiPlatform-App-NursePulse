@@ -4,6 +4,7 @@ import '../../../core/localization/app_strings.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -26,7 +27,8 @@ ChipPalette _severityPalette(AlertSeverity severity) => switch (severity) {
 };
 
 class AlertListView extends ConsumerStatefulWidget {
-  const AlertListView({super.key});
+  const AlertListView({super.key, this.alertId});
+  final String? alertId;
   @override
   ConsumerState<AlertListView> createState() => _AlertListViewState();
 }
@@ -38,9 +40,36 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(alertNotifierProvider.notifier).load();
+      if (!ref.read(alertNotifierProvider).loading) {
+        ref.read(alertNotifierProvider.notifier).load();
+      }
       if (ref.read(alertCanManageProvider)) {
         ref.read(patientNotifierProvider.notifier).load();
+      }
+    });
+    _openLinkedAlert();
+  }
+
+  @override
+  void didUpdateWidget(covariant AlertListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.alertId != oldWidget.alertId) _openLinkedAlert();
+  }
+
+  void _openLinkedAlert() {
+    final id = widget.alertId;
+    if (id == null || AlertRules.id(id, 'una alerta') != null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !ref.read(alertCanManageProvider)) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDetailDialog(alertId: id),
+      );
+      if (!mounted) return;
+      final router = GoRouter.of(context);
+      final uri = router.routeInformationProvider.value.uri;
+      if (uri.path == '/alerts' && uri.queryParameters['alert'] == id) {
+        router.go('/alerts');
       }
     });
   }
@@ -87,9 +116,11 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final filter in AlertFilter.values)
                     ChoiceChip(
+                      key: ValueKey('alert-filter-${filter.name}'),
                       label: Text(context.tr(filter.label)),
                       selected: _filter == filter,
                       onSelected: (_) => setState(() => _filter = filter),
@@ -135,6 +166,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
             onRefresh: () => ref.read(alertNotifierProvider.notifier).load(),
             child: alerts.isEmpty
                 ? ListView(
+                    key: ValueKey(_filter),
                     physics: AlwaysScrollableScrollPhysics(),
                     children: [
                       Padding(
@@ -146,6 +178,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                     ],
                   )
                 : ListView.builder(
+                    key: ValueKey(_filter),
                     physics: AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: alerts.length,
@@ -166,7 +199,9 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                       final pending = state.savingId == alert.id;
                       return ClinicalCard(
                         cardKey: ValueKey('alert-card-${alert.id}'),
-                        accent: _severityPalette(alert.severity).foreground,
+                        accent: ClinicalColors.severityAccent(
+                          alert.severity.wireValue,
+                        ),
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,

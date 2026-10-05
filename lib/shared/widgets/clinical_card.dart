@@ -26,7 +26,7 @@ class ClinicalCard extends StatelessWidget {
         decoration: accent == null
             ? null
             : BoxDecoration(
-                border: Border(left: BorderSide(color: accent!, width: 3)),
+                border: Border(left: BorderSide(color: accent!, width: 5)),
               ),
         padding: EdgeInsets.all(20),
         child: Column(

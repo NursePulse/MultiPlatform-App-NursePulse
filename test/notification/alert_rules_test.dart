@@ -63,7 +63,7 @@ void main() {
   test('notas trim y límite 255', () {
     expect(AlertRules.notes(' ${'x' * 255} '), 'x' * 255);
   });
-  test('filtros excluyen cerradas y Moderadas incluye todo lo no crítico', () {
+  test('cada gravedad filtra exactamente y excluye cerradas', () {
     final alerts = [
       alert(id: '1'),
       alert(id: '2', severity: 'HIGH'),
@@ -84,10 +84,10 @@ void main() {
       '5',
     ]);
     expect(AlertRules.filter(alerts, AlertFilter.moderate).map((a) => a.id), [
-      '2',
       '3',
-      '4',
     ]);
+    expect(AlertRules.filter(alerts, AlertFilter.high).map((a) => a.id), ['2']);
+    expect(AlertRules.filter(alerts, AlertFilter.low).map((a) => a.id), ['4']);
   });
   test('fecha ausente no se inventa ni se sustituye por atención/cierre', () {
     final json = alertJson(
