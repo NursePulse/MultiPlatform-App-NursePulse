@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -87,8 +89,9 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Paciente guardado.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('Paciente guardado.'))),
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -106,13 +109,13 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
     TextInputType? keyboard,
     int lines = 1,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: 12),
     child: TextFormField(
       key: ValueKey(key),
       controller: c,
       enabled: !_busy,
-      decoration: InputDecoration(labelText: label),
-      validator: validator,
+      decoration: InputDecoration(labelText: context.tr(label)),
+      validator: (value) => context.validation(validator(value)),
       keyboardType: keyboard,
       maxLines: lines,
       autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -126,11 +129,11 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
     String? Function(DateTime?) validator,
     void Function(DateTime) change,
   ) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: 12),
     child: FormField<DateTime>(
       key: ValueKey(key),
       initialValue: value,
-      validator: validator,
+      validator: (value) => context.validation(validator(value)),
       autovalidateMode: AutovalidateMode.onUserInteraction,
       builder: (field) => InkWell(
         onTap: _busy
@@ -150,7 +153,7 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                   firstDate: first,
                   lastDate: last,
                   initialDate: initial,
-                  helpText: label,
+                  helpText: context.tr(label),
                 );
 
                 if (!mounted || picked == null) return;
@@ -159,14 +162,16 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
               },
         child: InputDecorator(
           decoration: InputDecoration(
-            labelText: label,
-            errorText: field.errorText,
-            suffixIcon: const Icon(Icons.calendar_today_outlined),
+            labelText: context.tr(label),
+            errorText: context.validation(field.errorText),
+            suffixIcon: Icon(Icons.calendar_today_outlined),
           ),
           child: Text(
-            value == null
-                ? 'Seleccionar'
-                : '${value.day}/${value.month}/${value.year}',
+            context.tr(
+              value == null
+                  ? 'Seleccionar'
+                  : '${value.day}/${value.month}/${value.year}',
+            ),
           ),
         ),
       ),
@@ -202,10 +207,14 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.editing == null ? 'Nuevo paciente' : 'Editar paciente',
+                  context.tr(
+                    widget.editing == null
+                        ? 'Nuevo paciente'
+                        : 'Editar paciente',
+                  ),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _text(
                   _first,
                   'Nombre',
@@ -238,23 +247,25 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                   (v) => _birth = v,
                 ),
                 DropdownButtonFormField<String>(
-                  key: const ValueKey('patient-gender'),
+                  key: ValueKey('patient-gender'),
                   initialValue: PatientRules.genders.containsKey(_gender)
                       ? _gender
                       : null,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Género'),
+                  decoration: InputDecoration(labelText: context.tr('Género')),
                   items: [
                     for (final entry in PatientRules.genders.entries)
                       DropdownMenuItem(
                         value: entry.key,
-                        child: Text(entry.value),
+                        child: Text(context.tr(entry.value)),
                       ),
                   ],
                   onChanged: _busy ? null : (v) => setState(() => _gender = v),
-                  validator: (v) => v == null ? 'Selecciona un género.' : null,
+                  validator: (v) => context.validation(
+                    v == null ? 'Selecciona un género.' : null,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _text(
                   _diagnosis,
                   'Diagnóstico',
@@ -275,18 +286,18 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                   (v) => PatientRules.text(v, 'Cama', 20),
                 ),
                 doctors.when(
-                  loading: () => const Padding(
+                  loading: () => Padding(
                     padding: EdgeInsets.all(12),
-                    child: Text('Cargando médicos…'),
+                    child: Text(context.tr('Cargando médicos…')),
                   ),
                   error: (error, _) => Column(
                     children: [
-                      Text(describePatientError(error)),
+                      Text(context.tr(describePatientError(error))),
                       TextButton(
                         onPressed: _busy
                             ? null
                             : () => ref.invalidate(patientDoctorsProvider),
-                        child: const Text('Reintentar médicos'),
+                        child: Text(context.tr('Reintentar médicos')),
                       ),
                     ],
                   ),
@@ -303,8 +314,8 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                           ? _physician
                           : null,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Médico tratante',
+                      decoration: InputDecoration(
+                        labelText: context.tr('Médico tratante'),
                       ),
                       items: [
                         for (final name in options)
@@ -316,33 +327,36 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                       onChanged: _busy
                           ? null
                           : (v) => setState(() => _physician = v),
-                      validator: (v) =>
-                          PatientRules.text(v, 'Médico tratante', 120),
+                      validator: (v) => context.validation(
+                        PatientRules.text(v, 'Médico tratante', 120),
+                      ),
                     );
                   },
                 ),
                 if (doctors.asData?.value.isEmpty == true &&
                     widget.editing == null)
-                  const Text(
-                    'No hay médicos disponibles. Un administrador debe asignar ese rol.',
+                  Text(
+                    context.tr(
+                      'No hay médicos disponibles. Un administrador debe asignar ese rol.',
+                    ),
                   ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 DropdownButtonFormField<PatientStatus>(
                   initialValue: _status,
-                  decoration: const InputDecoration(labelText: 'Estado'),
+                  decoration: InputDecoration(labelText: context.tr('Estado')),
                   isExpanded: true,
                   items: [
                     for (final status in PatientStatus.values)
                       DropdownMenuItem(
                         value: status,
-                        child: Text(status.label),
+                        child: Text(context.patientStatus(status.label)),
                       ),
                   ],
                   onChanged: _busy
                       ? null
                       : (v) => setState(() => _status = v ?? _status),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _date(
                   'Fecha de ingreso',
                   'patient-admission',
@@ -351,28 +365,32 @@ class _PatientFormSheetState extends ConsumerState<PatientFormSheet> {
                   (v) => _admission = v,
                 ),
                 if (!allowed)
-                  const Text('No tienes permisos para guardar pacientes.'),
+                  Text(
+                    context.tr('No tienes permisos para guardar pacientes.'),
+                  ),
                 if (_error != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12),
                     child: Text(
-                      _error!,
+                      context.tr(_error!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
                   ),
                 FilledButton(
-                  key: const ValueKey('patient-save'),
+                  key: ValueKey('patient-save'),
                   onPressed:
                       _busy || saving || !allowed || doctors.asData == null
                       ? null
                       : _submit,
-                  child: Text(_busy ? 'Guardando…' : 'Guardar paciente'),
+                  child: Text(
+                    context.tr(_busy ? 'Guardando…' : 'Guardar paciente'),
+                  ),
                 ),
                 TextButton(
                   onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(context.tr('Cancelar')),
                 ),
               ],
             ),

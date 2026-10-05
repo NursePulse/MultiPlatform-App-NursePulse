@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,30 +139,44 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Suscribirse a ${widget.plan.name} · USD ${widget.plan.monthlyPrice}/mes',
+                  context.tr(
+                    'Suscribirse a ${context.tr(widget.plan.name)} · USD ${widget.plan.monthlyPrice}/mes',
+                  ),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const Text('Pago simulado. No se realizan cobros reales.'),
+                Text(
+                  context.tr('Pago simulado. No se realizan cobros reales.'),
+                ),
                 if (!allowed)
-                  const Text('Inicia sesión para seleccionar un plan.'),
-                const SizedBox(height: 12),
+                  Text(context.tr('Inicia sesión para seleccionar un plan.')),
+                SizedBox(height: 12),
                 if (receipt != null) ...[
-                  const Icon(
+                  Icon(
                     Icons.check_circle_rounded,
                     color: Colors.green,
                     size: 48,
                   ),
-                  const Text('Pago simulado aprobado'),
-                  Text('Transacción ${receipt.transactionId}'),
-                  Text('Tarjeta: •••• ${receipt.request.cardLastFour}'),
+                  Text(context.tr('Pago simulado aprobado')),
+                  Text(context.tr('Transacción ${receipt.transactionId}')),
                   Text(
-                    'Fecha: ${DateFormat('dd/MM/yyyy HH:mm').format(receipt.paidAt.toLocal())}',
+                    context.tr('Tarjeta: •••• ${receipt.request.cardLastFour}'),
                   ),
-                  Text('Total simulado: USD ${receipt.request.amount}'),
+                  Text(
+                    context.tr(
+                      'Fecha: ${DateFormat('dd/MM/yyyy HH:mm').format(receipt.paidAt.toLocal())}',
+                    ),
+                  ),
+                  Text(
+                    context.tr('Total simulado: USD ${receipt.request.amount}'),
+                  ),
                   if (state.pendingPlan != null) ...[
-                    Text(state.error ?? 'El plan está pendiente de guardado.'),
+                    Text(
+                      context.tr(
+                        state.error ?? 'El plan está pendiente de guardado.',
+                      ),
+                    ),
                     FilledButton(
-                      key: const ValueKey('checkout-save-pending'),
+                      key: ValueKey('checkout-save-pending'),
                       onPressed: busy || !allowed
                           ? null
                           : () async {
@@ -170,10 +186,10 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                                     .selectPlan(widget.plan.id);
                               } catch (_) {}
                             },
-                      child: const Text('Reintentar guardado del plan'),
+                      child: Text(context.tr('Reintentar guardado del plan')),
                     ),
                   ] else
-                    const Text('Plan guardado en este dispositivo.'),
+                    Text(context.tr('Plan guardado en este dispositivo.')),
                 ] else
                   Form(
                     key: _formKey,
@@ -181,39 +197,46 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-name'),
+                          key: ValueKey('checkout-name'),
                           controller: _cardholder,
                           enabled: !busy && allowed,
-                          decoration: const InputDecoration(
-                            labelText: 'Titular de la tarjeta',
+                          decoration: InputDecoration(
+                            labelText: context.tr('Titular de la tarjeta'),
                           ),
-                          validator: CheckoutRules.name,
+                          validator: (value) =>
+                              context.validation(CheckoutRules.name(value)),
                         ),
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-email'),
+                          key: ValueKey('checkout-email'),
                           controller: _email,
                           enabled: !busy && allowed,
-                          decoration: const InputDecoration(
-                            labelText: 'Email de facturación',
+                          decoration: InputDecoration(
+                            labelText: context.tr('Email de facturación'),
                           ),
                           keyboardType: TextInputType.emailAddress,
-                          validator: CheckoutRules.email,
+                          validator: (value) =>
+                              context.validation(CheckoutRules.email(value)),
                         ),
+                        SizedBox(height: 16),
                         DropdownButtonFormField<BillingDocumentType>(
-                          key: const ValueKey('checkout-document-type'),
+                          key: ValueKey('checkout-document-type'),
                           initialValue: _documentType,
-                          decoration: const InputDecoration(
-                            labelText: 'Tipo de documento',
+                          decoration: InputDecoration(
+                            labelText: context.tr('Tipo de documento'),
                           ),
                           items: [
                             for (final type in BillingDocumentType.values)
                               DropdownMenuItem(
                                 value: type,
                                 child: Text(
-                                  type == BillingDocumentType.dni
-                                      ? 'DNI'
-                                      : 'RUC',
+                                  context.tr(
+                                    type == BillingDocumentType.dni
+                                        ? 'DNI'
+                                        : 'RUC',
+                                  ),
                                 ),
                               ),
                           ],
@@ -228,14 +251,17 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                                   }
                                 },
                         ),
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-document'),
+                          key: ValueKey('checkout-document'),
                           controller: _document,
                           enabled: !busy && allowed,
                           decoration: InputDecoration(
-                            labelText: _documentType == BillingDocumentType.dni
-                                ? 'DNI'
-                                : 'RUC',
+                            labelText: context.tr(
+                              _documentType == BillingDocumentType.dni
+                                  ? 'DNI'
+                                  : 'RUC',
+                            ),
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -244,81 +270,101 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                               _documentType == BillingDocumentType.dni ? 8 : 11,
                             ),
                           ],
-                          validator: (value) =>
-                              CheckoutRules.document(_documentType, value),
+                          validator: (value) => context.validation(
+                            CheckoutRules.document(_documentType, value),
+                          ),
                         ),
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-card'),
+                          key: ValueKey('checkout-card'),
                           controller: _cardNumber,
                           enabled: !busy && allowed,
                           decoration: InputDecoration(
-                            labelText: 'Número de tarjeta',
-                            helperText: detectCardBrand(_cardNumber.text).name
-                                .toUpperCase(),
+                            labelText: context.tr('Número de tarjeta'),
+                            helperText: context.tr(
+                              detectCardBrand(_cardNumber.text).name
+                                  .toUpperCase(),
+                            ),
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) => setState(
                             () => _format(_cardNumber, value, formatCardNumber),
                           ),
-                          validator: (value) => isValidCardNumber(value ?? '')
-                              ? null
-                              : 'Número de tarjeta inválido.',
+                          validator: (value) => context.validation(
+                            isValidCardNumber(value ?? '')
+                                ? null
+                                : 'Número de tarjeta inválido.',
+                          ),
                         ),
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-expiry'),
+                          key: ValueKey('checkout-expiry'),
                           controller: _expiry,
                           enabled: !busy && allowed,
-                          decoration: const InputDecoration(labelText: 'MM/AA'),
+                          decoration: InputDecoration(
+                            labelText: context.tr('Vencimiento (MM/AA)'),
+                          ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) =>
                               _format(_expiry, value, formatExpiry),
-                          validator: (value) => isValidFutureExpiry(value ?? '')
-                              ? null
-                              : 'Vencimiento inválido.',
+                          validator: (value) => context.validation(
+                            isValidFutureExpiry(value ?? '')
+                                ? null
+                                : 'Vencimiento inválido.',
+                          ),
                         ),
+                        SizedBox(height: 16),
                         TextFormField(
-                          key: const ValueKey('checkout-cvv'),
+                          key: ValueKey('checkout-cvv'),
                           controller: _cvv,
                           enabled: !busy && allowed,
-                          decoration: const InputDecoration(labelText: 'CVV'),
+                          decoration: InputDecoration(
+                            labelText: context.tr('CVV'),
+                          ),
                           keyboardType: TextInputType.number,
                           obscureText: true,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(4),
                           ],
-                          validator: (value) => isValidSecurityCode(value ?? '')
-                              ? null
-                              : 'CVV inválido.',
+                          validator: (value) => context.validation(
+                            isValidSecurityCode(value ?? '')
+                                ? null
+                                : 'CVV inválido.',
+                          ),
                         ),
                         if (_error != null)
                           Text(
-                            _error!,
-                            key: const ValueKey('checkout-error'),
+                            context.tr(_error!),
+                            key: ValueKey('checkout-error'),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
                           ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         FilledButton(
-                          key: const ValueKey('checkout-pay'),
+                          key: ValueKey('checkout-pay'),
                           onPressed: busy || !allowed ? null : _pay,
                           child: Text(
-                            busy
-                                ? 'Procesando…'
-                                : 'Simular pago USD ${widget.plan.monthlyPrice}',
+                            context.tr(
+                              busy
+                                  ? 'Procesando…'
+                                  : 'Simular pago USD ${widget.plan.monthlyPrice}',
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 TextButton(
-                  key: const ValueKey('checkout-close'),
+                  key: ValueKey('checkout-close'),
                   onPressed: busy
                       ? null
                       : () => Navigator.of(context)
                             .pop(receipt != null && state.pendingPlan == null),
-                  child: Text(receipt == null ? 'Cancelar' : 'Listo'),
+                  child: Text(
+                    context.tr(receipt == null ? 'Cancelar' : 'Listo'),
+                  ),
                 ),
               ],
             ),

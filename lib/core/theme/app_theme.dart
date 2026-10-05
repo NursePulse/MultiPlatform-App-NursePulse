@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../features/iam/domain/user.dart';
+
 /// Approved mobile identity. Clinical colors retain their web meaning.
 class AppTheme {
   AppTheme._();
@@ -20,23 +22,25 @@ class AppTheme {
   static const Color surface = Color(0xFFF8FAFC);
   static const Color surfaceAlt = Color(0xFFF1F5F9);
   // Fine, muted outlines: visible on white without harsh dark frames.
-  static const Color border = Color(0xFFB9CDCC);
-  static const Color borderAlt = Color(0xFF8CA5A5);
+  static const Color border = Color(0xFFE0E7ED);
+  static const Color borderAlt = Color(0xFFBBC8D2);
 
-  // The Angular app has no dark mode, so there is only one theme here —
-  // it always renders with this light, Angular-matched palette.
-  static ThemeData light() => _base(_scheme());
+  // Light layout with accents derived from the authenticated role.
+  static ThemeData light({ViewMode role = ViewMode.nurse}) {
+    final palette = RoleAppearance.forRole(role);
+    return _base(_scheme(palette), palette);
+  }
 
-  static ColorScheme _scheme() {
+  static ColorScheme _scheme(RoleAppearance palette) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
+      seedColor: palette.accent,
       brightness: Brightness.light,
     );
     return scheme.copyWith(
-      primary: primary,
-      primaryContainer: primarySurface,
-      onPrimaryContainer: primaryDark,
-      secondary: primaryAlt,
+      primary: palette.accent,
+      primaryContainer: palette.soft,
+      onPrimaryContainer: palette.accent,
+      secondary: palette.accent,
       surface: Colors.white,
       surfaceContainerHighest: surfaceAlt,
       onSurface: textPrimary,
@@ -46,16 +50,36 @@ class AppTheme {
     );
   }
 
-  static ThemeData _base(ColorScheme scheme) {
+  static ThemeData _base(ColorScheme scheme, RoleAppearance palette) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: surface,
+      extensions: [palette],
       textTheme: ThemeData.light().textTheme
           .apply(bodyColor: textPrimary, displayColor: textHeading)
           .copyWith(
+            bodyLarge: const TextStyle(
+              fontSize: 16,
+              height: 1.45,
+              color: textPrimary,
+            ),
+            bodyMedium: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: textPrimary,
+            ),
+            bodySmall: const TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: textMuted,
+            ),
+            labelLarge: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             headlineSmall: const TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               color: textHeading,
             ),
@@ -69,9 +93,10 @@ class AppTheme {
               fontWeight: FontWeight.w600,
               color: textHeading,
             ),
-          ),
+          )
+          .apply(fontFamily: 'Roboto'),
       appBarTheme: AppBarTheme(
-        backgroundColor: evergreen,
+        backgroundColor: palette.header,
         foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -103,7 +128,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -114,10 +139,10 @@ class AppTheme {
           borderSide: BorderSide(color: scheme.error, width: 1.5),
         ),
         labelStyle: const TextStyle(color: textMuted),
-        floatingLabelStyle: const TextStyle(color: primary),
+        floatingLabelStyle: TextStyle(color: scheme.primary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 14,
+          vertical: 18,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -132,7 +157,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: textPrimary,
+          foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.outlineVariant),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -143,11 +168,11 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: scheme.primary),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primary,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
         foregroundColor: Colors.white,
         elevation: 2,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
@@ -170,8 +195,21 @@ class AppTheme {
         clipBehavior: Clip.antiAlias,
       ),
       dividerTheme: const DividerThemeData(color: border, thickness: 1),
-      listTileTheme: const ListTileThemeData(
-        iconColor: primary,
+      listTileTheme: ListTileThemeData(
+        iconColor: scheme.primary,
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 16,
+          height: 1.4,
+          fontWeight: FontWeight.w600,
+          color: textHeading,
+        ),
+        subtitleTextStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          height: 1.5,
+          color: textMuted,
+        ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -184,11 +222,12 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
-        indicatorColor: primarySurface,
+        indicatorColor: palette.soft,
+        height: 76,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w700
                 : FontWeight.w500,
@@ -201,8 +240,9 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: surfaceAlt,
         labelStyle: const TextStyle(
+          fontFamily: 'Roboto',
           color: textPrimary,
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -211,6 +251,54 @@ class AppTheme {
       ),
     );
   }
+}
+
+/// Brand accents stay separate from clinical status colors.
+class RoleAppearance extends ThemeExtension<RoleAppearance> {
+  const RoleAppearance({
+    required this.accent,
+    required this.header,
+    required this.soft,
+  });
+  final Color accent;
+  final Color header;
+  final Color soft;
+
+  static RoleAppearance forRole(ViewMode role) => switch (role) {
+    ViewMode.doctor => const RoleAppearance(
+      accent: Color(0xFF1D4ED8),
+      header: Color(0xFF17395C),
+      soft: Color(0xFFE8F0FF),
+    ),
+    ViewMode.admin => const RoleAppearance(
+      accent: Color(0xFF85621D),
+      header: Color(0xFF45371C),
+      soft: Color(0xFFFFF3D6),
+    ),
+    _ => const RoleAppearance(
+      accent: AppTheme.primary,
+      header: AppTheme.evergreen,
+      soft: Color(0xFFE6F5F1),
+    ),
+  };
+
+  @override
+  RoleAppearance copyWith({Color? accent, Color? header, Color? soft}) =>
+      RoleAppearance(
+        accent: accent ?? this.accent,
+        header: header ?? this.header,
+        soft: soft ?? this.soft,
+      );
+
+  @override
+  RoleAppearance lerp(covariant RoleAppearance? other, double t) =>
+      other == null
+      ? this
+      : RoleAppearance(
+          accent: Color.lerp(accent, other.accent, t)!,
+          header: Color.lerp(header, other.header, t)!,
+          soft: Color.lerp(soft, other.soft, t)!,
+        );
 }
 
 /// A background/foreground pair for a status pill or badge.

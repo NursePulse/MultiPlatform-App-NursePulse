@@ -99,6 +99,10 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('No hay pacientes registrados.'),
       250,
+      scrollable: find.descendant(
+        of: find.byType(RefreshIndicator),
+        matching: find.byType(Scrollable),
+      ),
     );
     expect(find.text('No hay pacientes registrados.'), findsOneWidget);
     await tester.runAsync(
@@ -130,7 +134,13 @@ void main() {
         scale: 2,
       );
       for (var i = 0; i < 12; i++) {
-        await tester.drag(find.byType(ListView), const Offset(0, -400));
+        await tester.drag(
+          find.descendant(
+            of: find.byType(RefreshIndicator),
+            matching: find.byType(ListView),
+          ),
+          const Offset(0, -400),
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }
@@ -147,7 +157,14 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await mount(tester, api, user: actor);
-      await tester.scrollUntilVisible(find.text('Accesos rápidos'), 350);
+      await tester.scrollUntilVisible(
+        find.text('Accesos rápidos'),
+        350,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(api.includeAudit, actor != nurse);
       expect(
         find.byKey(const ValueKey('dashboard-/reports')),
@@ -241,6 +258,10 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('dashboard-audit-retry')),
         300,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
       );
       expect(
         find.text('No se pudo cargar la auditoría: Error simulado'),
@@ -249,6 +270,14 @@ void main() {
       api.snapshot = data(audits: [audit()]);
       await tester.tap(find.byKey(const ValueKey('dashboard-audit-retry')));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Pacientes monitoreados'),
+        -300,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(find.text('—'), findsNothing);
       expect(api.reads, 2);
     },
@@ -271,7 +300,14 @@ void main() {
       );
     await mount(tester, api);
     final patientTiles = find.byType(ListTile);
-    await tester.scrollUntilVisible(patientTiles.first, 300);
+    await tester.scrollUntilVisible(
+      patientTiles.first,
+      300,
+      scrollable: find.descendant(
+        of: find.byType(RefreshIndicator),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(patientTiles, findsNWidgets(5));
     await tester.tap(patientTiles.first);
     await tester.pumpAndSettle();
@@ -280,6 +316,10 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Alertas activas recientes'),
       300,
+      scrollable: find.descendant(
+        of: find.byType(RefreshIndicator),
+        matching: find.byType(Scrollable),
+      ),
     );
     expect(find.text('Generada: sin información'), findsNWidgets(5));
     expect(find.text('Cerrada'), findsNothing);

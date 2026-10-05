@@ -59,16 +59,19 @@ Future<void> fill(WidgetTester tester) async {
     ('cvv', '123'),
   ]) {
     await tester.ensureVisible(find.byKey(ValueKey('checkout-${entry.$1}')));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(ValueKey('checkout-${entry.$1}')),
       entry.$2,
     );
   }
   await tester.ensureVisible(find.byKey(const ValueKey('checkout-pay')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> payButton(WidgetTester tester) async {
   await tester.ensureVisible(find.byKey(const ValueKey('checkout-pay')));
+  await tester.pumpAndSettle();
   await tester.tap(find.byKey(const ValueKey('checkout-pay')));
   await tester.pumpAndSettle();
 }

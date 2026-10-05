@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,20 +54,22 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(deleting ? 'Eliminar paciente' : 'Dar de alta'),
+        title: Text(context.tr(deleting ? 'Eliminar paciente' : 'Dar de alta')),
         content: Text(
-          deleting
-              ? '¿Eliminar a ${patient.fullName}? Esta acción es permanente.'
-              : '¿Dar de alta a ${patient.fullName}?',
+          context.tr(
+            deleting
+                ? '¿Eliminar a ${patient.fullName}? Esta acción es permanente.'
+                : '¿Dar de alta a ${patient.fullName}?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(deleting ? 'Eliminar' : 'Dar de alta'),
+            child: Text(context.tr(deleting ? 'Eliminar' : 'Dar de alta')),
           ),
         ],
       ),
@@ -87,15 +91,18 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              deleting ? 'Paciente eliminado.' : 'Paciente dado de alta.',
+              context.tr(
+                deleting ? 'Paciente eliminado.' : 'Paciente dado de alta.',
+              ),
             ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(describePatientError(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr(describePatientError(e)))),
+        );
       }
     }
   }
@@ -115,60 +122,65 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
               onPressed: state.saving
                   ? null
                   : () => showPatientFormSheet(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Nuevo paciente'),
+              icon: Icon(Icons.add),
+              label: Text(context.tr('Nuevo paciente')),
             )
           : null,
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: ListPageBody(
           header: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Pacientes',
+                    context.tr('Pacientes'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: _query,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText:
-                          'Buscar por nombre, documento, habitación o estado',
-                      prefixIcon: const Icon(Icons.search),
+                      labelText: context.tr(
+                        'Buscar por nombre, documento, habitación o estado',
+                      ),
+                      prefixIcon: Icon(Icons.search),
                       suffixIcon: _query.text.isEmpty
                           ? null
                           : IconButton(
-                              tooltip: 'Limpiar búsqueda',
+                              tooltip: context.tr('Limpiar búsqueda'),
                               onPressed: () => setState(_query.clear),
-                              icon: const Icon(Icons.close),
+                              icon: Icon(Icons.close),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
-                    '${patients.length} de ${state.patients.length} pacientes',
+                    context.tr(
+                      '${patients.length} de ${state.patients.length} pacientes',
+                    ),
                   ),
                 ],
               ),
             ),
-            if (state.loading || state.saving) const LinearProgressIndicator(),
+            if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.error!)),
+                    Expanded(child: Text(context.tr(state.error!))),
                     TextButton(
                       onPressed: state.loading || state.saving
                           ? null
                           : () => ref
                                 .read(patientNotifierProvider.notifier)
                                 .load(),
-                      child: const Text('Reintentar'),
+                      child: Text(context.tr('Reintentar')),
                     ),
                   ],
                 ),
@@ -177,21 +189,23 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
           child: RefreshIndicator(
             onRefresh: () => ref.read(patientNotifierProvider.notifier).load(),
             child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 96),
               itemCount: patients.isEmpty ? 1 : patients.length,
               itemBuilder: (context, index) {
                 if (patients.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: EdgeInsets.all(32),
                     child: Text(
-                      state.loading
-                          ? 'Cargando pacientes…'
-                          : state.error != null
-                          ? 'No se pudo cargar el listado.'
-                          : state.patients.isEmpty
-                          ? 'No hay pacientes registrados.'
-                          : 'No hay coincidencias.',
+                      context.tr(
+                        state.loading
+                            ? 'Cargando pacientes…'
+                            : state.error != null
+                            ? 'No se pudo cargar el listado.'
+                            : state.patients.isEmpty
+                            ? 'No hay pacientes registrados.'
+                            : 'No hay coincidencias.',
+                      ),
                     ),
                   );
                 }
@@ -202,18 +216,22 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                   child: InkWell(
                     onTap: () => context.push('/patients/${p.id}/monitoring'),
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: AppTheme.primarySurface,
-                                foregroundColor: AppTheme.primaryDark,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                foregroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
                                 child: Text(p.initials),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   p.fullName,
@@ -228,61 +246,63 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                                   onSelected: (action) => _action(p, action),
                                   itemBuilder: (_) => [
                                     if (permissions.update)
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                         value: 'edit',
-                                        child: Text('Editar'),
+                                        child: Text(context.tr('Editar')),
                                       ),
                                     if (permissions.update &&
                                         p.status != PatientStatus.discharged)
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                         value: 'discharge',
-                                        child: Text('Dar de alta'),
+                                        child: Text(context.tr('Dar de alta')),
                                       ),
                                     if (permissions.delete)
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                         value: 'delete',
-                                        child: Text('Eliminar'),
+                                        child: Text(context.tr('Eliminar')),
                                       ),
                                   ],
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 4,
                             children: [
                               StatusChip(
-                                label: p.statusLabel,
+                                label: context.patientStatus(p.statusLabel),
                                 palette: ClinicalColors.patientStatus(
                                   p.statusLabel,
                                 ),
                               ),
                               Chip(
                                 label: Text(
-                                  'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
+                                  context.tr(
+                                    'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           Text(
-                            '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
+                            context.tr(
+                              '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: Text(
                                   p.diagnosis,
-                                  style: const TextStyle(
-                                    color: AppTheme.textMuted,
-                                  ),
+                                  style: TextStyle(color: AppTheme.textMuted),
                                 ),
                               ),
-                              const Icon(
+                              Icon(
                                 Icons.chevron_right,
-                                color: AppTheme.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ],
                           ),

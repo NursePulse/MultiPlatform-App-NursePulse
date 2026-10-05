@@ -1,7 +1,10 @@
+import '../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import 'brand_mark.dart';
+import 'language_selector.dart';
 
 /// Both auth forms stay scrollable with the keyboard and enlarged text.
 class AuthPage extends StatelessWidget {
@@ -27,37 +30,32 @@ class AuthPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              decoration: const BoxDecoration(
-                color: AppTheme.evergreen,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(32),
-                ),
+              decoration: BoxDecoration(
+                color:
+                    Theme.of(context).extension<RoleAppearance>()?.header ??
+                    AppTheme.evergreen,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(0)),
               ),
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
                   child: Column(
                     children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: LanguageSelector(light: true),
+                      ),
                       if (onBack != null)
                         Align(
                           alignment: Alignment.centerLeft,
                           child: IconButton(
-                            tooltip: 'Volver a iniciar sesión',
+                            tooltip: context.tr('Volver a iniciar sesión'),
                             onPressed: onBack,
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
+                            icon: Icon(Icons.arrow_back, color: Colors.white),
                           ),
                         ),
-                      const BrandWordmark(light: true, large: true),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Cuidado conectado, en cada turno',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFFD6E7E3)),
-                      ),
+                      BrandWordmark(light: true, large: true),
                     ],
                   ),
                 ),
@@ -66,25 +64,25 @@ class AuthPage extends StatelessWidget {
             Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: BoxConstraints(maxWidth: 560),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                  padding: EdgeInsets.fromLTRB(20, 28, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        title,
+                        context.tr(title),
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
-                        subtitle,
-                        style: const TextStyle(color: AppTheme.textMuted),
+                        context.tr(subtitle),
+                        style: TextStyle(color: AppTheme.textMuted),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       Card(
                         child: Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20),
                           child: child,
                         ),
                       ),

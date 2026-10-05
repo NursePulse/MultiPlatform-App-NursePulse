@@ -1,3 +1,5 @@
+import '../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 /// Small generic loading/error/empty/data switcher used by every list view,
@@ -34,12 +36,12 @@ class AsyncValueView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading && _hasNoData) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     if (error != null && _hasNoData) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -48,13 +50,13 @@ class AsyncValueView<T> extends StatelessWidget {
                 color: Theme.of(context).colorScheme.error,
                 size: 40,
               ),
-              const SizedBox(height: 12),
-              Text('$error', textAlign: TextAlign.center),
+              SizedBox(height: 12),
+              Text(context.tr('$error'), textAlign: TextAlign.center),
               if (onRetry != null) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 FilledButton(
                   onPressed: onRetry,
-                  child: const Text('Reintentar'),
+                  child: Text(context.tr('Reintentar')),
                 ),
               ],
             ],
@@ -66,7 +68,7 @@ class AsyncValueView<T> extends StatelessWidget {
     if (value == null || (isEmpty?.call(value) ?? false)) {
       return Center(
         child: Text(
-          emptyMessage,
+          context.tr(emptyMessage),
           style: TextStyle(color: Theme.of(context).colorScheme.outline),
         ),
       );
