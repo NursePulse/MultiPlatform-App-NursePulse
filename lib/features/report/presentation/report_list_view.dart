@@ -1,3 +1,6 @@
+import '../../../shared/widgets/list_page_body.dart';
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -20,109 +23,116 @@ class ReportListView extends ConsumerWidget {
       floatingActionButton: !allowed
           ? null
           : FloatingActionButton.extended(
-              key: const ValueKey('report-new'),
+              key: ValueKey('report-new'),
               onPressed: state.loading || state.generating
                   ? null
                   : () => showDialog<void>(
                       context: context,
                       barrierDismissible: false,
-                      builder: (_) => const _GenerateReportDialog(),
+                      builder: (_) => _GenerateReportDialog(),
                     ),
-              icon: const Icon(Icons.add_chart_rounded),
-              label: const Text('Generar reporte'),
+              icon: Icon(Icons.add_chart_rounded),
+              label: Text(context.tr('Generar reporte')),
             ),
       body: SafeArea(
-        child: Column(
-          children: [
-            const PageTitle('Reportes'),
-            if (state.loading || state.generating)
-              const LinearProgressIndicator(),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: notifier.load,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  children: !allowed
-                      ? [
-                          const Text(
-                            'Solo Doctor o Admin pueden consultar y generar reportes.',
-                          ),
-                        ]
-                      : [
-                          const Text(
-                            'Los reportes se guardan en este dispositivo.',
-                          ),
-                          Text('${state.reports.length} reportes'),
-                          if (state.error != null) ...[
-                            Text(
-                              state.error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                            TextButton(
-                              key: const ValueKey('report-retry'),
-                              onPressed: state.loading || state.generating
-                                  ? null
-                                  : notifier.load,
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
-                          if (state.warning != null)
-                            Text(
-                              state.warning!,
-                              key: const ValueKey('report-warning'),
-                            ),
-                          if (state.reports.isEmpty &&
-                              !state.loading &&
-                              state.error == null)
-                            const Text('Aún no generaste ningún reporte.'),
-                          for (final report in state.reports)
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      report.title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
-                                    ),
-                                    Text(
-                                      '${ReportType.labelFor(report.type)} · ${ReportStatus.labelFor(report.status)}',
-                                    ),
-                                    Text(
-                                      '${_dateFormat.format(report.startDate.toLocal())} - ${_dateFormat.format(report.endDate.toLocal())} · por ${report.generatedBy}',
-                                    ),
-                                    Text(
-                                      'Generado: ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt.toLocal())}',
-                                    ),
-                                    if (report.summary != null)
-                                      _Summary(report.summary!),
-                                    if (report.clinicalConclusion != null)
-                                      Text(report.clinicalConclusion!),
-                                    TextButton(
-                                      key: ValueKey(
-                                        'report-detail-${report.id}',
-                                      ),
-                                      onPressed: () => showDialog<void>(
-                                        context: context,
-                                        builder: (_) => _ReportDetail(report),
-                                      ),
-                                      child: const Text('Ver detalle'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                ),
-              ),
-            ),
+        top: false,
+        bottom: false,
+        child: ListPageBody(
+          header: [
+            PageTitle('Reportes'),
+            if (state.loading || state.generating) LinearProgressIndicator(),
           ],
+          child: RefreshIndicator(
+            onRefresh: notifier.load,
+            child: ListView(
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 100),
+              children: !allowed
+                  ? [
+                      Text(
+                        context.tr(
+                          'Solo Doctor o Admin pueden consultar y generar reportes.',
+                        ),
+                      ),
+                    ]
+                  : [
+                      Text(
+                        context.tr(
+                          'Los reportes se guardan en este dispositivo.',
+                        ),
+                      ),
+                      Text(context.tr('${state.reports.length} reportes')),
+                      if (state.error != null) ...[
+                        Text(
+                          context.tr(state.error!),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        TextButton(
+                          key: ValueKey('report-retry'),
+                          onPressed: state.loading || state.generating
+                              ? null
+                              : notifier.load,
+                          child: Text(context.tr('Reintentar')),
+                        ),
+                      ],
+                      if (state.warning != null)
+                        Text(
+                          context.tr(state.warning!),
+                          key: ValueKey('report-warning'),
+                        ),
+                      if (state.reports.isEmpty &&
+                          !state.loading &&
+                          state.error == null)
+                        Text(context.tr('Aún no generaste ningún reporte.')),
+                      for (final report in state.reports)
+                        Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  report.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
+                                ),
+                                Text(
+                                  context.tr(
+                                    '${context.tr(ReportType.labelFor(report.type))} · ${context.tr(ReportStatus.labelFor(report.status))}',
+                                  ),
+                                ),
+                                Text(
+                                  context.tr(
+                                    '${_dateFormat.format(report.startDate.toLocal())} - ${_dateFormat.format(report.endDate.toLocal())} · por ${report.generatedBy}',
+                                  ),
+                                ),
+                                Text(
+                                  context.tr(
+                                    'Generado: ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt.toLocal())}',
+                                  ),
+                                ),
+                                if (report.summary != null)
+                                  _Summary(report.summary!),
+                                if (report.clinicalConclusion != null)
+                                  Text(context.tr(report.clinicalConclusion!)),
+                                TextButton(
+                                  key: ValueKey('report-detail-${report.id}'),
+                                  onPressed: () => showDialog<void>(
+                                    context: context,
+                                    builder: (_) => _ReportDetail(report),
+                                  ),
+                                  child: Text(context.tr('Ver detalle')),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+            ),
+          ),
         ),
       ),
     );
@@ -134,18 +144,18 @@ class _Summary extends StatelessWidget {
   final ReportSummary summary;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
+    padding: EdgeInsets.symmetric(vertical: 8),
     child: Wrap(
       spacing: 16,
       runSpacing: 4,
       children: [
-        Text('Pacientes: ${summary.patients}'),
-        Text('Signos vitales: ${summary.vitalSigns}'),
-        Text('Eventos: ${summary.clinicalEvents}'),
-        Text('SBAR: ${summary.sbarTransfers}'),
-        Text('Alertas activas: ${summary.activeAlerts}'),
-        Text('Críticas activas: ${summary.criticalAlerts}'),
-        Text('Auditorías: ${summary.auditLogs}'),
+        Text(context.tr('Pacientes: ${summary.patients}')),
+        Text(context.tr('Signos vitales: ${summary.vitalSigns}')),
+        Text(context.tr('Eventos: ${summary.clinicalEvents}')),
+        Text(context.tr('SBAR: ${summary.sbarTransfers}')),
+        Text(context.tr('Alertas activas: ${summary.activeAlerts}')),
+        Text(context.tr('Críticas activas: ${summary.criticalAlerts}')),
+        Text(context.tr('Auditorías: ${summary.auditLogs}')),
       ],
     ),
   );
@@ -162,28 +172,38 @@ class _ReportDetail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${ReportType.labelFor(report.type)} · ${ReportStatus.labelFor(report.status)}',
+          context.tr(
+            '${context.tr(ReportType.labelFor(report.type))} · ${context.tr(ReportStatus.labelFor(report.status))}',
+          ),
         ),
         Text(
-          'Periodo: ${_dateFormat.format(report.startDate.toLocal())} - ${_dateFormat.format(report.endDate.toLocal())}',
+          context.tr(
+            'Periodo: ${_dateFormat.format(report.startDate.toLocal())} - ${_dateFormat.format(report.endDate.toLocal())}',
+          ),
         ),
         Text(
-          'Por ${report.generatedBy} · ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt.toLocal())}',
+          context.tr(
+            'Por ${report.generatedBy} · ${DateFormat('dd/MM/yyyy HH:mm').format(report.createdAt.toLocal())}',
+          ),
         ),
-        Text(ReportRules.tone(report.summary)),
+        Text(context.tr(ReportRules.tone(report.summary))),
         if (report.summary != null) ...[
           _Summary(report.summary!),
-          Text('Actividad registrada: ${report.summary!.activityTotal}'),
+          Text(
+            context.tr(
+              'Actividad registrada: ${report.summary!.activityTotal}',
+            ),
+          ),
         ],
-        Text(report.clinicalConclusion ?? 'Sin conclusión.'),
-        const SizedBox(height: 12),
-        Text('ID: ${report.id}'),
+        Text(context.tr(report.clinicalConclusion ?? 'Sin conclusión.')),
+        SizedBox(height: 12),
+        Text(context.tr('ID: ${report.id}')),
       ],
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cerrar'),
+        child: Text(context.tr('Cerrar')),
       ),
     ],
   );
@@ -269,7 +289,7 @@ class _GenerateReportDialogState extends ConsumerState<_GenerateReportDialog> {
       readOnly: true,
       enabled: !busy,
       decoration: InputDecoration(
-        labelText: start ? 'Desde' : 'Hasta',
+        labelText: context.tr(start ? 'Desde' : 'Hasta'),
         suffixIcon: IconButton(
           key: ValueKey(start ? 'report-clear-start' : 'report-clear-end'),
           onPressed: busy || date == null
@@ -281,13 +301,15 @@ class _GenerateReportDialogState extends ConsumerState<_GenerateReportDialog> {
                     _endDate = null;
                   }
                 }),
-          icon: const Icon(Icons.clear),
+          icon: Icon(Icons.clear),
         ),
       ),
       onTap: busy ? null : () => _pickDate(start),
-      validator: (_) => date == null
-          ? 'Selecciona la fecha.'
-          : ReportRules.dates(_startDate, _endDate),
+      validator: (_) => context.validation(
+        date == null
+            ? 'Selecciona la fecha.'
+            : ReportRules.dates(_startDate, _endDate),
+      ),
     );
   }
 
@@ -300,7 +322,7 @@ class _GenerateReportDialogState extends ConsumerState<_GenerateReportDialog> {
     return PopScope(
       canPop: !busy,
       child: AlertDialog(
-        title: const Text('Generar reporte'),
+        title: Text(context.tr('Generar reporte')),
         scrollable: true,
         content: SizedBox(
           width: 420,
@@ -310,54 +332,61 @@ class _GenerateReportDialogState extends ConsumerState<_GenerateReportDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                  key: const ValueKey('report-title'),
+                  key: ValueKey('report-title'),
                   controller: _title,
                   enabled: !busy && allowed,
-                  decoration: const InputDecoration(labelText: 'Título'),
-                  validator: ReportRules.title,
+                  decoration: InputDecoration(labelText: context.tr('Título')),
+                  validator: (value) =>
+                      context.validation(ReportRules.title(value)),
                 ),
+                SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  key: const ValueKey('report-type'),
+                  key: ValueKey('report-type'),
                   initialValue: _type,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  decoration: InputDecoration(labelText: context.tr('Tipo')),
                   items: [
                     for (final type in ReportType.values)
                       DropdownMenuItem(
                         value: type,
-                        child: Text(ReportType.labelFor(type)),
+                        child: Text(context.tr(ReportType.labelFor(type))),
                       ),
                   ],
                   onChanged: busy || !allowed
                       ? null
                       : (value) => setState(() => _type = value ?? _type),
                 ),
+                SizedBox(height: 16),
                 _dateField(true, busy || !allowed),
+                SizedBox(height: 16),
                 _dateField(false, busy || !allowed),
+                SizedBox(height: 12),
                 if (_error != null)
                   Text(
-                    _error!,
-                    key: const ValueKey('report-form-error'),
+                    context.tr(_error!),
+                    key: ValueKey('report-form-error'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 if (!allowed)
-                  const Text('Solo Doctor o Admin pueden generar reportes.'),
+                  Text(
+                    context.tr('Solo Doctor o Admin pueden generar reportes.'),
+                  ),
               ],
             ),
           ),
         ),
         actions: [
           TextButton(
-            key: const ValueKey('report-cancel'),
+            key: ValueKey('report-cancel'),
             onPressed: busy ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
           FilledButton(
-            key: const ValueKey('report-generate'),
+            key: ValueKey('report-generate'),
             onPressed: busy || !allowed ? null : _submit,
-            child: Text(busy ? 'Generando…' : 'Generar'),
+            child: Text(context.tr(busy ? 'Generando…' : 'Generar')),
           ),
         ],
       ),

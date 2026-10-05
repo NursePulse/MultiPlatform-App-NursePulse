@@ -15,6 +15,7 @@ class ListPageBody extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.6),
           child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: header,
             ),

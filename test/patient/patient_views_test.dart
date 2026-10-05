@@ -119,7 +119,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Documento: 00123456'), findsOneWidget);
+      expect(find.text('Documento:'), findsOneWidget);
+      expect(find.textContaining('00123456'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Reintentar'), 250);
+      await tester.pumpAndSettle();
       expect(find.text('Sin historial'), findsOneWidget);
 
       await tester.tap(find.text('Reintentar'));

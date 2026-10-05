@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +12,7 @@ import '../domain/alert_rules.dart';
 Future<void> showAlertForm(BuildContext context) => showDialog<void>(
   context: context,
   barrierDismissible: false,
-  builder: (_) => const AlertFormDialog(),
+  builder: (_) => AlertFormDialog(),
 );
 
 class AlertFormDialog extends ConsumerStatefulWidget {
@@ -54,9 +56,9 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
           );
       if (mounted) {
         final warning = ref.read(alertNotifierProvider).warning;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(warning ?? 'Alerta guardada.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr(warning ?? 'Alerta guardada.'))),
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -77,7 +79,7 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
       canPop: !blocked,
       child: AlertDialog(
         scrollable: true,
-        title: const Text('Registrar alerta'),
+        title: Text(context.tr('Registrar alerta')),
         content: SizedBox(
           width: 420,
           child: SingleChildScrollView(
@@ -92,13 +94,15 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
                     ),
                     initialValue: selected ? _patientId : null,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Paciente'),
+                    decoration: InputDecoration(
+                      labelText: context.tr('Paciente'),
+                    ),
                     items: [
                       for (final p in patients.patients)
                         DropdownMenuItem(
                           value: p.id,
                           child: Text(
-                            '${p.fullName} · Hab. ${p.roomNumber}',
+                            context.tr('${p.fullName} · Hab. ${p.roomNumber}'),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -106,14 +110,15 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
                     onChanged: blocked
                         ? null
                         : (value) => setState(() => _patientId = value),
-                    validator: (value) =>
-                        value == null ||
-                            !patients.patients.any((p) => p.id == value)
-                        ? 'Selecciona un paciente disponible.'
-                        : null,
+                    validator: (value) => context.validation(
+                      value == null ||
+                              !patients.patients.any((p) => p.id == value)
+                          ? 'Selecciona un paciente disponible.'
+                          : null,
+                    ),
                   ),
-                  if (patients.loading) const LinearProgressIndicator(),
-                  if (patients.error != null) Text(patients.error!),
+                  if (patients.loading) LinearProgressIndicator(),
+                  if (patients.error != null) Text(context.tr(patients.error!)),
                   if (patients.error != null || patients.patients.isEmpty)
                     TextButton(
                       onPressed: blocked || patients.loading
@@ -121,66 +126,71 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
                           : () => ref
                                 .read(patientNotifierProvider.notifier)
                                 .load(),
-                      child: const Text('Recargar pacientes'),
+                      child: Text(context.tr('Recargar pacientes')),
                     ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    key: const ValueKey('alert-type'),
+                    key: ValueKey('alert-type'),
                     initialValue: _type,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo de alerta',
+                    decoration: InputDecoration(
+                      labelText: context.tr('Tipo de alerta'),
                     ),
                     items: [
                       for (final type in AlertType.values)
                         DropdownMenuItem(
                           value: type,
-                          child: Text(AlertType.label(type)),
+                          child: Text(context.tr(AlertType.label(type))),
                         ),
                     ],
                     onChanged: blocked
                         ? null
                         : (value) => setState(() => _type = value!),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   DropdownButtonFormField<AlertSeverity>(
-                    key: const ValueKey('alert-severity'),
+                    key: ValueKey('alert-severity'),
                     initialValue: _severity,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Severidad'),
+                    decoration: InputDecoration(
+                      labelText: context.tr('Severidad'),
+                    ),
                     items: [
                       for (final severity in AlertSeverity.values)
                         DropdownMenuItem(
                           value: severity,
-                          child: Text(severity.label),
+                          child: Text(context.tr(severity.label)),
                         ),
                     ],
                     onChanged: blocked
                         ? null
                         : (value) => setState(() => _severity = value!),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextFormField(
-                    key: const ValueKey('alert-description'),
+                    key: ValueKey('alert-description'),
                     controller: _description,
                     enabled: !blocked,
                     maxLines: 3,
                     maxLength: 255,
                     maxLengthEnforcement: MaxLengthEnforcement.none,
-                    decoration: const InputDecoration(
-                      labelText: 'Descripción',
-                      helperText: '1–255 caracteres',
+                    decoration: InputDecoration(
+                      labelText: context.tr('Descripción'),
+                      helperText: context.tr('1–255 caracteres'),
                     ),
                     autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: AlertRules.description,
+                    validator: (value) =>
+                        context.validation(AlertRules.description(value)),
                   ),
                   if (!allowed)
-                    const Text('No tienes permiso para registrar alertas.'),
+                    Text(
+                      context.tr('No tienes permiso para registrar alertas.'),
+                    ),
                   if (_error != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
+                      padding: EdgeInsets.only(top: 12),
                       child: Text(
-                        _error!,
+                        context.tr(_error!),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
@@ -194,7 +204,7 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
         actions: [
           TextButton(
             onPressed: blocked ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
           FilledButton(
             onPressed:
@@ -205,7 +215,7 @@ class _AlertFormDialogState extends ConsumerState<AlertFormDialog> {
                     patients.patients.isEmpty
                 ? null
                 : _submit,
-            child: Text(blocked ? 'Guardando…' : 'Guardar'),
+            child: Text(context.tr(blocked ? 'Guardando…' : 'Guardar')),
           ),
         ],
       ),

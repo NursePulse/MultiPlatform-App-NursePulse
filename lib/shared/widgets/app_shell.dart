@@ -1,9 +1,12 @@
+import '../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import 'brand_mark.dart';
+import 'language_selector.dart';
 import '../../features/iam/application/auth_notifier.dart';
 import '../../features/iam/domain/user.dart';
 
@@ -19,7 +22,7 @@ class _NavItem {
       visibleFor == null || user?.hasAnyRole(visibleFor!) == true;
 }
 
-const _navItems = [
+final _navItems = [
   _NavItem('/dashboard', 'Dashboard', Icons.grid_view_rounded),
   _NavItem('/patients', 'Pacientes', Icons.groups_rounded),
   _NavItem('/vital-signs', 'Signos vitales', Icons.monitor_heart_rounded),
@@ -76,6 +79,16 @@ class _AppShellState extends ConsumerState<AppShell> {
       viewMode: viewMode,
       username: auth.user?.username ?? '',
       isWide: isWide,
+      isMonitoring:
+          widget.currentPath.startsWith('/patients/') &&
+          widget.currentPath.endsWith('/monitoring'),
+      onBack: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/patients');
+        }
+      },
       onSignOut: () => ref.read(authNotifierProvider.notifier).signOut(),
       onOpenDrawer: isWide
           ? null
@@ -85,6 +98,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (isWide) {
       return Scaffold(
         key: _scaffoldKey,
+        resizeToAvoidBottomInset: false,
         body: Row(
           children: [
             SizedBox(
@@ -106,6 +120,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
       drawer: Drawer(
         child: _navigation(items, selectedIndex, (index) {
           Navigator.of(context).pop();
@@ -126,22 +141,22 @@ class _AppShellState extends ConsumerState<AppShell> {
             context.go(['/dashboard', '/patients', '/alerts'][index]);
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.grid_view_rounded),
-            label: 'Inicio',
+            label: context.tr('Inicio'),
           ),
           NavigationDestination(
             icon: Icon(Icons.groups_rounded),
-            label: 'Pacientes',
+            label: context.tr('Pacientes'),
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_active_rounded),
-            label: 'Alertas',
+            label: context.tr('Alertas'),
           ),
           NavigationDestination(
             icon: Icon(Icons.more_horiz_rounded),
-            label: 'Más',
+            label: context.tr('Más'),
           ),
         ],
       ),
@@ -157,8 +172,13 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget _content() => Align(
     alignment: Alignment.topCenter,
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 1200),
-      child: widget.child,
+      constraints: BoxConstraints(maxWidth: 1200),
+      child: MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        removeBottom: true,
+        child: widget.child,
+      ),
     ),
   );
 
@@ -167,29 +187,33 @@ class _AppShellState extends ConsumerState<AppShell> {
     int selectedIndex,
     ValueChanged<int> onSelect,
   ) => Material(
-    color: AppTheme.evergreen,
+    color:
+        Theme.of(context).extension<RoleAppearance>()?.header ??
+        AppTheme.evergreen,
     child: SafeArea(
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 20),
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(4, 0, 4, 24),
             child: BrandWordmark(light: true),
           ),
           for (var i = 0; i < items.length; i++)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: EdgeInsets.only(bottom: 6),
               child: ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 leading: Icon(items[i].icon),
-                title: Text(items[i].label),
+                title: Text(context.tr(items[i].label)),
                 selected: i == selectedIndex,
-                selectedTileColor: AppTheme.primarySurface,
-                selectedColor: AppTheme.primaryDark,
+                selectedTileColor: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer,
+                selectedColor: Theme.of(context).colorScheme.primary,
                 textColor: Colors.white,
-                iconColor: const Color(0xFFD6E7E3),
+                iconColor: Color(0xFFD6E7E3),
                 onTap: () => onSelect(i),
               ),
             ),
@@ -204,6 +228,8 @@ class _ShellHeader extends StatelessWidget {
     required this.viewMode,
     required this.username,
     required this.isWide,
+    required this.isMonitoring,
+    required this.onBack,
     required this.onSignOut,
     required this.onOpenDrawer,
   });
@@ -211,6 +237,8 @@ class _ShellHeader extends StatelessWidget {
   final ViewMode viewMode;
   final String username;
   final bool isWide;
+  final bool isMonitoring;
+  final VoidCallback onBack;
   final VoidCallback onSignOut;
   final VoidCallback? onOpenDrawer;
 
@@ -218,12 +246,12 @@ class _ShellHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final roleBadge = CircleAvatar(
       radius: 16,
-      backgroundColor: AppTheme.primarySurface,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       child: Text(
-        viewMode.shortBadge,
+        context.tr(viewMode.shortBadge),
         style: TextStyle(
-          fontSize: 11,
-          color: AppTheme.primaryDark,
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -235,8 +263,8 @@ class _ShellHeader extends StatelessWidget {
     // user pick a different one, since that would desync the nav from what
     // the backend actually authorizes.
     final accountMenu = PopupMenuButton<void>(
-      tooltip: 'Cuenta',
-      offset: const Offset(0, 40),
+      tooltip: context.tr('Cuenta'),
+      offset: Offset(0, 40),
       itemBuilder: (context) => [
         PopupMenuItem<void>(
           enabled: false,
@@ -246,32 +274,32 @@ class _ShellHeader extends StatelessWidget {
             children: [
               Text(username, style: Theme.of(context).textTheme.titleSmall),
               Text(
-                viewMode.label,
+                context.tr(viewMode.label),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
         ),
-        const PopupMenuDivider(),
+        PopupMenuDivider(),
         PopupMenuItem<void>(
           onTap: onSignOut,
-          child: const Text('Cerrar sesión'),
+          child: Text(context.tr('Cerrar sesión')),
         ),
       ],
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: EdgeInsets.all(8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             roleBadge,
             if (isWide) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
+                constraints: BoxConstraints(maxWidth: 200),
                 child: Text(
-                  username.isEmpty ? viewMode.label : username,
+                  username.isEmpty ? context.tr(viewMode.label) : username,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -281,22 +309,42 @@ class _ShellHeader extends StatelessWidget {
     );
 
     return Material(
-      color: AppTheme.evergreen,
+      color:
+          Theme.of(context).extension<RoleAppearance>()?.header ??
+          AppTheme.evergreen,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
             children: [
-              if (onOpenDrawer != null)
+              if (isMonitoring)
                 IconButton(
-                  tooltip: 'Abrir menú',
-                  icon: const Icon(Icons.menu, color: Colors.white),
+                  tooltip: context.tr('Volver a pacientes'),
+                  onPressed: onBack,
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                )
+              else if (onOpenDrawer != null)
+                IconButton(
+                  tooltip: context.tr('Abrir menú'),
+                  icon: Icon(Icons.menu, color: Colors.white),
                   onPressed: onOpenDrawer,
                 )
               else
-                const SizedBox(width: 8),
-              Expanded(child: const BrandWordmark(light: true)),
+                SizedBox(width: 8),
+              Expanded(
+                child: isMonitoring
+                    ? Text(
+                        context.tr('Seguimiento'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    : const BrandWordmark(light: true),
+              ),
+              LanguageSelector(light: true),
               accountMenu,
             ],
           ),

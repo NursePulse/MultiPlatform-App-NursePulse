@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,56 +81,62 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                       patientState.patients.isEmpty
                   ? null
                   : () => showVitalSignFormSheet(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Registrar'),
+              icon: Icon(Icons.add),
+              label: Text(context.tr('Registrar')),
             )
           : null,
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: ListPageBody(
           header: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Signos vitales',
+                    context.tr('Signos vitales'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: _query,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Buscar paciente, documento o riesgo',
-                      prefixIcon: const Icon(Icons.search),
+                      labelText: context.tr(
+                        'Buscar paciente, documento o riesgo',
+                      ),
+                      prefixIcon: Icon(Icons.search),
                       suffixIcon: _query.text.isEmpty
                           ? null
                           : IconButton(
-                              tooltip: 'Limpiar búsqueda',
+                              tooltip: context.tr('Limpiar búsqueda'),
                               onPressed: () => setState(_query.clear),
-                              icon: const Icon(Icons.close),
+                              icon: Icon(Icons.close),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
-                    '${records.length} de ${state.records.length} registros',
+                    context.tr(
+                      '${records.length} de ${state.records.length} registros',
+                    ),
                   ),
                 ],
               ),
             ),
             if (state.loading || state.saving || patientState.loading)
-              const LinearProgressIndicator(),
+              LinearProgressIndicator(),
             if (state.warning != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.warning!)),
+                    Expanded(child: Text(context.tr(state.warning!))),
                     IconButton(
-                      tooltip: 'Cerrar aviso',
-                      icon: const Icon(Icons.close),
+                      tooltip: context.tr('Cerrar aviso'),
+                      icon: Icon(Icons.close),
                       onPressed: () => ref
                           .read(vitalSignNotifierProvider.notifier)
                           .clearWarning(),
@@ -138,16 +146,20 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
               ),
             if (state.error != null || patientState.error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: Text(state.error ?? patientState.error!)),
+                    Expanded(
+                      child: Text(
+                        context.tr(state.error ?? patientState.error!),
+                      ),
+                    ),
                     TextButton(
                       onPressed:
                           state.loading || state.saving || patientState.loading
                           ? null
                           : _refresh,
-                      child: const Text('Reintentar'),
+                      child: Text(context.tr('Reintentar')),
                     ),
                   ],
                 ),
@@ -156,31 +168,35 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                 !patientState.loading &&
                 patientState.error == null &&
                 patientState.patients.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(12),
                 child: Text(
-                  'Registra un paciente para asociar signos vitales.',
+                  context.tr(
+                    'Registra un paciente para asociar signos vitales.',
+                  ),
                 ),
               ),
           ],
           child: RefreshIndicator(
             onRefresh: _refresh,
             child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 96),
               itemCount: records.isEmpty ? 1 : records.length,
               itemBuilder: (context, index) {
                 if (records.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: EdgeInsets.all(32),
                     child: Text(
-                      state.loading
-                          ? 'Cargando signos vitales…'
-                          : state.error != null
-                          ? 'No se pudo cargar el historial.'
-                          : state.records.isEmpty
-                          ? 'No hay signos vitales registrados.'
-                          : 'No hay coincidencias.',
+                      context.tr(
+                        state.loading
+                            ? 'Cargando signos vitales…'
+                            : state.error != null
+                            ? 'No se pudo cargar el historial.'
+                            : state.records.isEmpty
+                            ? 'No hay signos vitales registrados.'
+                            : 'No hay coincidencias.',
+                      ),
                     ),
                   );
                 }
@@ -190,31 +206,37 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
 
                 return Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          p?.fullName ?? 'Paciente #${s.patientId}',
+                          p?.fullName ?? context.tr('Paciente #${s.patientId}'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         StatusChip(
                           label: s.riskLabel,
                           palette: _riskPalette(s.riskLevel),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           DateFormat('dd/MM/yyyy HH:mm')
                               .format(s.recordedAt.toLocal()),
                         ),
                         Text(
-                          'FC: ${s.heartRate} lpm · FR: ${s.respiratoryRate} rpm',
+                          context.tr(
+                            'FC: ${s.heartRate} lpm · FR: ${s.respiratoryRate} rpm',
+                          ),
                         ),
-                        Text('TA: ${s.systolic}/${s.diastolic} mmHg'),
                         Text(
-                          'SpO₂: ${s.oxygenSaturation} % · '
-                          'Temperatura: ${s.temperature} °C',
+                          context.tr('TA: ${s.systolic}/${s.diastolic} mmHg'),
+                        ),
+                        Text(
+                          context.tr(
+                            'SpO₂: ${s.oxygenSaturation} % · '
+                            'Temperatura: ${s.temperature} °C',
+                          ),
                         ),
                       ],
                     ),

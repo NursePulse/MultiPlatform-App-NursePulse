@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +12,7 @@ import '../domain/sbar_transfer.dart';
 Future<void> showSbarForm(BuildContext context) => showDialog<void>(
   context: context,
   barrierDismissible: false,
-  builder: (_) => const SbarFormDialog(),
+  builder: (_) => SbarFormDialog(),
 );
 
 class SbarFormDialog extends ConsumerStatefulWidget {
@@ -56,7 +58,7 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
           .read(patientNotifierProvider.notifier)
           .byId(_patientId!);
       if (patient == null) {
-        throw const FormatException(
+        throw FormatException(
           'El paciente seleccionado ya no está disponible.',
         );
       }
@@ -76,7 +78,9 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
       if (mounted) {
         final warning = ref.read(sbarNotifierProvider).warning;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(warning ?? 'Traspaso SBAR guardado.')),
+          SnackBar(
+            content: Text(context.tr(warning ?? 'Traspaso SBAR guardado.')),
+          ),
         );
         Navigator.of(context).pop();
       }
@@ -93,7 +97,7 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
     String key,
     bool blocked,
   ) => Padding(
-    padding: const EdgeInsets.only(top: 12),
+    padding: EdgeInsets.only(top: 12),
     child: TextFormField(
       key: ValueKey(key),
       controller: controller,
@@ -102,11 +106,11 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
       maxLength: 1000,
       maxLengthEnforcement: MaxLengthEnforcement.none,
       decoration: InputDecoration(
-        labelText: label,
-        helperText: '8–1000 caracteres',
+        labelText: context.tr(label),
+        helperText: context.tr('8–1000 caracteres'),
       ),
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      validator: (value) => SbarRules.section(value, label),
+      validator: (value) => context.validation(SbarRules.section(value, label)),
     ),
   );
 
@@ -124,7 +128,7 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
       canPop: !blocked,
       child: AlertDialog(
         scrollable: true,
-        title: const Text('Nuevo traspaso SBAR'),
+        title: Text(context.tr('Nuevo traspaso SBAR')),
         content: SizedBox(
           width: 420,
           child: SingleChildScrollView(
@@ -139,13 +143,15 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                     ),
                     initialValue: patientSelected ? _patientId : null,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Paciente'),
+                    decoration: InputDecoration(
+                      labelText: context.tr('Paciente'),
+                    ),
                     items: [
                       for (final p in patients.patients)
                         DropdownMenuItem(
                           value: p.id,
                           child: Text(
-                            '${p.fullName} · Hab. ${p.roomNumber}',
+                            context.tr('${p.fullName} · Hab. ${p.roomNumber}'),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -153,14 +159,15 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                     onChanged: blocked
                         ? null
                         : (value) => setState(() => _patientId = value),
-                    validator: (value) =>
-                        value == null ||
-                            !patients.patients.any((p) => p.id == value)
-                        ? 'Selecciona un paciente disponible.'
-                        : null,
+                    validator: (value) => context.validation(
+                      value == null ||
+                              !patients.patients.any((p) => p.id == value)
+                          ? 'Selecciona un paciente disponible.'
+                          : null,
+                    ),
                   ),
-                  if (patients.loading) const LinearProgressIndicator(),
-                  if (patients.error != null) Text(patients.error!),
+                  if (patients.loading) LinearProgressIndicator(),
+                  if (patients.error != null) Text(context.tr(patients.error!)),
                   if (patients.error != null || patients.patients.isEmpty)
                     TextButton(
                       onPressed: blocked || patients.loading
@@ -168,17 +175,17 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                           : () => ref
                                 .read(patientNotifierProvider.notifier)
                                 .load(),
-                      child: const Text('Recargar pacientes'),
+                      child: Text(context.tr('Recargar pacientes')),
                     ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     key: ValueKey(
                       'sbar-receiver-${receivers.map((u) => u.id).join(',')}',
                     ),
                     initialValue: receiverSelected ? _receiverId : null,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Personal receptor',
+                    decoration: InputDecoration(
+                      labelText: context.tr('Personal receptor'),
                     ),
                     items: [
                       for (final u in receivers)
@@ -193,26 +200,29 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                     onChanged: blocked
                         ? null
                         : (value) => setState(() => _receiverId = value),
-                    validator: (value) =>
-                        value == null || !receivers.any((u) => u.id == value)
-                        ? 'Selecciona un receptor Nurse disponible.'
-                        : null,
+                    validator: (value) => context.validation(
+                      value == null || !receivers.any((u) => u.id == value)
+                          ? 'Selecciona un receptor Nurse disponible.'
+                          : null,
+                    ),
                   ),
-                  if (directory.isLoading) const LinearProgressIndicator(),
+                  if (directory.isLoading) LinearProgressIndicator(),
                   if (directory.hasError)
-                    Text(describeSbarError(directory.error!)),
+                    Text(context.tr(describeSbarError(directory.error!))),
                   if (!directory.isLoading &&
                       !directory.hasError &&
                       receivers.isEmpty)
-                    const Text(
-                      'No hay receptores Nurse distintos del usuario actual.',
+                    Text(
+                      context.tr(
+                        'No hay receptores Nurse distintos del usuario actual.',
+                      ),
                     ),
                   if (directory.hasError || receivers.isEmpty)
                     TextButton(
                       onPressed: blocked || directory.isLoading
                           ? null
                           : () => ref.invalidate(sbarUsersProvider),
-                      child: const Text('Recargar receptores'),
+                      child: Text(context.tr('Recargar receptores')),
                     ),
                   _section(
                     _situation,
@@ -239,10 +249,12 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                     blocked,
                   ),
                   if (!allowed)
-                    const Text('No tienes permiso para registrar traspasos.'),
+                    Text(
+                      context.tr('No tienes permiso para registrar traspasos.'),
+                    ),
                   if (_error != null)
                     Text(
-                      _error!,
+                      context.tr(_error!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -254,12 +266,12 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
         ),
         actions: [
           TextButton(
-            key: const ValueKey('sbar-cancel'),
+            key: ValueKey('sbar-cancel'),
             onPressed: blocked ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
           FilledButton(
-            key: const ValueKey('sbar-save'),
+            key: ValueKey('sbar-save'),
             onPressed:
                 blocked ||
                     !allowed ||
@@ -270,7 +282,7 @@ class _SbarFormDialogState extends ConsumerState<SbarFormDialog> {
                     receivers.isEmpty
                 ? null
                 : _submit,
-            child: Text(_busy ? 'Guardando…' : 'Guardar'),
+            child: Text(context.tr(_busy ? 'Guardando…' : 'Guardar')),
           ),
         ],
       ),

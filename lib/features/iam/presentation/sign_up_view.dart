@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,17 +135,20 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: 12),
     child: TextFormField(
       key: ValueKey('register-$key'),
       controller: _fields[key],
-      validator: validator,
+      validator: (value) => context.validation(validator(value)),
       enabled: !_submitting,
       maxLength: maxLength,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       textInputAction: TextInputAction.next,
-      decoration: InputDecoration(labelText: label, counterText: ''),
+      decoration: InputDecoration(
+        labelText: context.tr(label),
+        counterText: '',
+      ),
     ),
   );
 
@@ -151,7 +156,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
     final visible = confirmation ? _showConfirm : _showPassword;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: TextFormField(
         key: ValueKey(confirmation ? 'register-confirm' : 'register-password'),
         controller: _fields[confirmation ? 'confirm' : 'password'],
@@ -164,17 +169,23 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
             ? TextInputAction.done
             : TextInputAction.next,
         onFieldSubmitted: confirmation ? (_) => _submit() : null,
-        validator: confirmation
-            ? (value) => RegistrationValidators.confirmPassword(
-                value,
-                _fields['password']!.text,
-              )
-            : RegistrationValidators.password,
+        validator: (value) => context.validation(
+          confirmation
+              ? RegistrationValidators.confirmPassword(
+                  value,
+                  _fields['password']!.text,
+                )
+              : RegistrationValidators.password(value),
+        ),
         decoration: InputDecoration(
-          labelText: confirmation ? 'Confirmar contraseña' : 'Contraseña',
+          labelText: context.tr(
+            confirmation ? 'Confirmar contraseña' : 'Contraseña',
+          ),
           counterText: '',
           suffixIcon: IconButton(
-            tooltip: visible ? 'Ocultar contraseña' : 'Mostrar contraseña',
+            tooltip: context.tr(
+              visible ? 'Ocultar contraseña' : 'Mostrar contraseña',
+            ),
             onPressed: _submitting
                 ? null
                 : () => setState(() {
@@ -205,18 +216,24 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle_outline, size: 48),
-                const SizedBox(height: 16),
-                Text('Cuenta creada para ${_fields['email']!.text.trim()}.'),
-                const Text(
-                  'Te enviamos un correo para confirmarla. Abre el '
-                  'enlace antes de iniciar sesión.',
+                Icon(Icons.check_circle_outline, size: 48),
+                SizedBox(height: 16),
+                Text(
+                  context.tr(
+                    'Cuenta creada para ${_fields['email']!.text.trim()}.',
+                  ),
+                ),
+                Text(
+                  context.tr(
+                    'Te enviamos un correo para confirmarla. Abre el '
+                    'enlace antes de iniciar sesión.',
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => context.go('/sign-in'),
-                  child: const Text('Ir a iniciar sesión'),
+                  child: Text(context.tr('Ir a iniciar sesión')),
                 ),
               ],
             )
@@ -278,19 +295,22 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   DropdownButtonFormField<String>(
-                    key: const ValueKey('register-role'),
+                    key: ValueKey('register-role'),
                     initialValue: _role,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Rol clínico'),
-                    validator: RegistrationValidators.role,
-                    items: const [
+                    decoration: InputDecoration(
+                      labelText: context.tr('Rol clínico'),
+                    ),
+                    validator: (value) =>
+                        context.validation(RegistrationValidators.role(value)),
+                    items: [
                       DropdownMenuItem(
                         value: 'ROLE_NURSE',
-                        child: Text('Enfermería'),
+                        child: Text(context.tr('Enfermería')),
                       ),
                       DropdownMenuItem(
                         value: 'ROLE_DOCTOR',
-                        child: Text('Medicina'),
+                        child: Text(context.tr('Medicina')),
                       ),
                     ],
                     onChanged: _submitting
@@ -301,34 +321,38 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                             }
                           },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _passwordField(confirmation: false),
-                  const Text(
-                    '12–20 caracteres, una mayúscula, un número y un símbolo.',
+                  Text(
+                    context.tr(
+                      '12–20 caracteres, una mayúscula, un número y un símbolo.',
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _passwordField(confirmation: true),
                   if (_error != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12),
                       child: Text(
-                        _error!,
-                        key: const ValueKey('register-error'),
+                        context.tr(_error!),
+                        key: ValueKey('register-error'),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),
                   FilledButton(
-                    key: const ValueKey('register-submit'),
+                    key: ValueKey('register-submit'),
                     onPressed: _submitting ? null : _submit,
                     child: Text(
-                      _submitting ? 'Creando cuenta…' : 'Registrarme',
+                      context.tr(
+                        _submitting ? 'Creando cuenta…' : 'Registrarme',
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () => context.go('/sign-in'),
-                    child: const Text('Ya tengo cuenta'),
+                    child: Text(context.tr('Ya tengo cuenta')),
                   ),
                 ],
               ),
