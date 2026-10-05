@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
@@ -32,7 +33,7 @@ class UserManagementView extends ConsumerWidget {
             onRefresh: notifier.load,
             child: ListView(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               children: !allowed
                   ? [Text(context.tr('Solo Admin puede administrar usuarios.'))]
                   : [
@@ -74,7 +75,7 @@ class UserManagementView extends ConsumerWidget {
                       for (final user in state.users)
                         Card(
                           child: Padding(
-                            padding: EdgeInsets.all(12),
+                            padding: EdgeInsets.all(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -109,10 +110,10 @@ class UserManagementView extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 8),
+                                SizedBox(height: 12),
                                 if (user.displayName != user.username)
                                   Text(user.displayName),
-                                SizedBox(height: 6),
+                                SizedBox(height: 12),
                                 Wrap(
                                   spacing: 6,
                                   runSpacing: 6,
@@ -135,7 +136,7 @@ class UserManagementView extends ConsumerWidget {
                                 ),
                                 SizedBox(height: 12),
                                 if (UserManagementRules.isSelf(actor, user))
-                                  Text(
+                                  InfoNotice(
                                     context.tr(
                                       'No puedes cambiar tu propio rol.',
                                     ),

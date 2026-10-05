@@ -1,3 +1,5 @@
+import 'package:nurse_pulse_app/shared/widgets/form_sheet.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -83,11 +85,24 @@ void main() {
         ' Reporte ficticio ',
       );
       await submit(tester);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(FormSheet), findsNothing);
       expect(find.text('Reporte ficticio'), findsOneWidget);
       expect(find.text('1 reportes'), findsOneWidget);
       expect(memory.writes, 1);
+      await tester.scrollUntilVisible(
+        find.text('Ver detalle'),
+        250,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Ver detalle'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Ver detalle'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Actividad registrada: 0'));
       await tester.pumpAndSettle();
       expect(find.text('Actividad registrada: 0'), findsOneWidget);
       expect(find.text('Sin alertas activas'), findsOneWidget);
@@ -174,7 +189,7 @@ void main() {
         'Reporte ficticio',
       );
       await submit(tester);
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(FormSheet), findsOneWidget);
       expect(find.byKey(const ValueKey('report-form-error')), findsOneWidget);
       expect(
         tester
@@ -186,7 +201,7 @@ void main() {
       expect(memory.writes, 0);
       sources.failures.clear();
       await submit(tester);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(FormSheet), findsNothing);
       expect(memory.writes, 1);
     },
   );
@@ -206,7 +221,7 @@ void main() {
         'Reporte ficticio',
       );
       await submit(tester);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(FormSheet), findsNothing);
       expect(find.byKey(const ValueKey('report-warning')), findsOneWidget);
       expect(find.text('Reporte ficticio'), findsOneWidget);
       await tester
@@ -253,7 +268,7 @@ void main() {
             .widget<PopScope>(
               find
                   .ancestor(
-                    of: find.byType(AlertDialog),
+                    of: find.byType(FormSheet),
                     matching: find.byType(PopScope),
                   )
                   .first,

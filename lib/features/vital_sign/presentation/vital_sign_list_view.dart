@@ -1,3 +1,5 @@
+import '../../../shared/widgets/vital_metrics.dart';
+import '../../../shared/widgets/page_action.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
@@ -73,25 +75,13 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
     }).toList();
 
     return Scaffold(
-      floatingActionButton: canRecord
-          ? FloatingActionButton.extended(
-              onPressed:
-                  state.saving ||
-                      patientState.loading ||
-                      patientState.patients.isEmpty
-                  ? null
-                  : () => showVitalSignFormSheet(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Registrar')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
         child: ListPageBody(
           header: [
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -104,9 +94,9 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                     controller: _query,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: context.tr(
-                        'Buscar paciente, documento o riesgo',
-                      ),
+                      labelText: context.tr('Buscar paciente'),
+                      helperText: context.tr('Nombre, documento o riesgo'),
+                      helperMaxLines: 3,
                       prefixIcon: Icon(Icons.search),
                       suffixIcon: _query.text.isEmpty
                           ? null
@@ -126,11 +116,24 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                 ],
               ),
             ),
+            if (canRecord)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed:
+                      state.saving ||
+                          patientState.loading ||
+                          patientState.patients.isEmpty
+                      ? null
+                      : () => showVitalSignFormSheet(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Registrar')),
+                ),
+              ),
             if (state.loading || state.saving || patientState.loading)
               LinearProgressIndicator(),
             if (state.warning != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.warning!))),
@@ -146,7 +149,7 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
               ),
             if (state.error != null || patientState.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(
@@ -169,7 +172,7 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                 patientState.error == null &&
                 patientState.patients.isEmpty)
               Padding(
-                padding: EdgeInsets.all(12),
+                padding: EdgeInsets.all(20),
                 child: Text(
                   context.tr(
                     'Registra un paciente para asociar signos vitales.',
@@ -181,7 +184,7 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
             onRefresh: _refresh,
             child: ListView.builder(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 96),
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
               itemCount: records.isEmpty ? 1 : records.length,
               itemBuilder: (context, index) {
                 if (records.isEmpty) {
@@ -205,6 +208,7 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                 final p = patients[s.patientId];
 
                 return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8),
                   child: Padding(
                     padding: EdgeInsets.all(12),
                     child: Column(
@@ -214,30 +218,19 @@ class _VitalSignListViewState extends ConsumerState<VitalSignListView> {
                           p?.fullName ?? context.tr('Paciente #${s.patientId}'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 12),
                         StatusChip(
                           label: s.riskLabel,
                           palette: _riskPalette(s.riskLevel),
                         ),
                         SizedBox(height: 8),
-                        Text(
+                        MetadataLine(
+                          Icons.schedule,
                           DateFormat('dd/MM/yyyy HH:mm')
                               .format(s.recordedAt.toLocal()),
                         ),
-                        Text(
-                          context.tr(
-                            'FC: ${s.heartRate} lpm · FR: ${s.respiratoryRate} rpm',
-                          ),
-                        ),
-                        Text(
-                          context.tr('TA: ${s.systolic}/${s.diastolic} mmHg'),
-                        ),
-                        Text(
-                          context.tr(
-                            'SpO₂: ${s.oxygenSaturation} % · '
-                            'Temperatura: ${s.temperature} °C',
-                          ),
-                        ),
+                        SizedBox(height: 12),
+                        VitalMetrics(s),
                       ],
                     ),
                   ),

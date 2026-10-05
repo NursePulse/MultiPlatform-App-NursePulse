@@ -9,13 +9,17 @@ class ClinicalCard extends StatelessWidget {
     required this.children,
     this.accent,
     this.onTap,
+    this.cardKey,
   });
   final List<Widget> children;
   final Color? accent;
   final VoidCallback? onTap;
+  final Key? cardKey;
 
   @override
   Widget build(BuildContext context) => Card(
+    key: cardKey,
+    margin: const EdgeInsets.symmetric(vertical: 8),
     child: InkWell(
       onTap: onTap,
       child: Container(
@@ -24,7 +28,7 @@ class ClinicalCard extends StatelessWidget {
             : BoxDecoration(
                 border: Border(left: BorderSide(color: accent!, width: 3)),
               ),
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -48,7 +52,7 @@ class InfoField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(context.tr(label), style: Theme.of(context).textTheme.bodySmall),
-        SizedBox(height: 2),
+        SizedBox(height: 6),
         Text(value, style: Theme.of(context).textTheme.titleMedium),
       ],
     ),
@@ -70,7 +74,7 @@ class InfoGrid extends StatelessWidget {
       final width = (constraints.maxWidth - (columns - 1) * 16) / columns;
       return Wrap(
         spacing: 16,
-        runSpacing: 2,
+        runSpacing: 8,
         children: [
           for (final field in fields) SizedBox(width: width, child: field),
         ],

@@ -695,7 +695,7 @@ void main() {
       );
 
       expect(find.text('Registrar'), findsNothing);
-      expect(find.textContaining('Temperatura:'), findsOneWidget);
+      expect(find.text('Temperatura'), findsOneWidget);
       expect(find.textContaining('Ana'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

@@ -8,6 +8,7 @@ import 'package:nurse_pulse_app/features/iam/application/auth_notifier.dart';
 import 'package:nurse_pulse_app/features/iam/presentation/sign_in_view.dart';
 import 'package:nurse_pulse_app/features/iam/presentation/sign_up_view.dart';
 import 'package:nurse_pulse_app/features/report/infrastructure/report_local_store.dart';
+import 'package:nurse_pulse_app/shared/widgets/page_action.dart';
 
 import '../dashboard/fixtures.dart' as fixtures;
 import 'session_isolation_test.dart'
@@ -238,7 +239,10 @@ void main() {
           await tester.pumpAndSettle();
           final open = form.$1 == '/subscriptions'
               ? find.byKey(const ValueKey('subscription-select-professional'))
-              : find.byType(FloatingActionButton);
+              : find.descendant(
+                  of: find.byType(PageAction),
+                  matching: find.byType(FilledButton),
+                );
           await tester.ensureVisible(open);
           await tester.pumpAndSettle();
           await tester.tap(open);

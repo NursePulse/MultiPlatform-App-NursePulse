@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
@@ -64,23 +65,27 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
     final patients = ref.watch(patientNotifierProvider).patients;
     final users = ref.watch(sbarUsersProvider).valueOrNull ?? [];
     return Scaffold(
-      floatingActionButton: allowed
-          ? FloatingActionButton.extended(
-              onPressed: state.saving ? null : () => showSbarForm(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Nuevo traspaso')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
         child: ListPageBody(
           header: [
-            PageTitle('Traspasos SBAR'),
+            PageTitle(
+              'Traspasos SBAR',
+              subtitle: '${state.transfers.length} traspasos',
+            ),
+            if (allowed)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed: state.saving ? null : () => showSbarForm(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Nuevo traspaso')),
+                ),
+              ),
             if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.error!))),
@@ -96,7 +101,7 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
               ),
             if (state.warning != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.warning!))),
@@ -115,7 +120,7 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
             onRefresh: () => ref.read(sbarNotifierProvider.notifier).load(),
             child: ListView.builder(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 96),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 24),
               itemCount: state.transfers.isEmpty ? 1 : state.transfers.length,
               itemBuilder: (context, index) {
                 if (state.transfers.isEmpty) {
@@ -143,39 +148,108 @@ class _SbarListViewState extends ConsumerState<SbarListView> {
                   if (u.id == t.targetNurseId) receiver = u.username;
                 }
                 return Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.zero,
                   child: ClinicalCard(
                     onTap: () => showDialog<void>(
                       context: context,
                       builder: (_) => SbarDetailDialog(transferId: t.id),
                     ),
                     children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              patientName,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Flexible(
+                            child: StatusChip(
+                              label: t.statusLabel,
+                              palette: ClinicalColors.sbarStatus(t.status),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
                       Text(
                         t.title,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       SizedBox(height: 8),
-                      Text(
-                        '$patientName\n${t.registeredBy ?? context.tr('Sin información')} → $receiver\n'
-                        '${t.transferredAt == null ? context.tr('Fecha no disponible') : DateFormat('dd/MM/yyyy HH:mm').format(t.transferredAt!.toLocal())}\n'
-                        'S: ${t.situation}',
+                      MetadataLine(
+                        Icons.person_outline,
+                        context.tr(
+                          'De: ${t.registeredBy ?? context.tr('Sin información')}',
+                        ),
                       ),
-                      SizedBox(height: 8),
+                      MetadataLine(
+                        Icons.person_outline,
+                        context.tr('Para: $receiver'),
+                      ),
+                      MetadataLine(
+                        Icons.schedule,
+                        t.transferredAt == null
+                            ? context.tr('Fecha no disponible')
+                            : DateFormat('dd/MM/yyyy HH:mm')
+                                  .format(t.transferredAt!.toLocal()),
+                      ),
+                      SizedBox(height: 12),
+                      for (final section in [
+                        ('S', 'Situación', t.situation),
+                        ('B', 'Antecedentes', t.background),
+                        ('A', 'Evaluación', t.assessment),
+                        ('R', 'Recomendación', t.recommendation),
+                      ])
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(radius: 16, child: Text(section.$1)),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      context.tr(section.$2),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(section.$3),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Divider(),
                       Wrap(
                         spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.spaceBetween,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          StatusChip(
-                            label: t.statusLabel,
-                            palette: ClinicalColors.sbarStatus(t.status),
+                          TextButton(
+                            onPressed: () => showDialog<void>(
+                              context: context,
+                              builder: (_) =>
+                                  SbarDetailDialog(transferId: t.id),
+                            ),
+                            child: Text(context.tr('Ver detalle')),
                           ),
                           if (allowed &&
                               t.canAcknowledge &&
                               !state.confirmedAcknowledgements.contains(t.id))
-                            IconButton(
+                            FilledButton.icon(
                               key: ValueKey('sbar-ack-${t.id}'),
-                              tooltip: context.tr('Confirmar recepción'),
                               icon: Icon(Icons.check_circle_outline),
+                              label: Text(context.tr('Confirmar recepción')),
                               onPressed: state.saving
                                   ? null
                                   : () => _acknowledge(t),

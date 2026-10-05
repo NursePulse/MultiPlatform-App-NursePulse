@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ Future<bool?> showPaymentCheckoutSheet(BuildContext context, Plan plan) =>
     showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       isDismissible: false,
       enableDrag: false,
       builder: (_) => _PaymentCheckoutSheet(plan: plan),
@@ -144,7 +146,8 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                   ),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                Text(
+                SizedBox(height: 12),
+                InfoNotice(
                   context.tr('Pago simulado. No se realizan cobros reales.'),
                 ),
                 if (!allowed)
@@ -297,41 +300,63 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                           ),
                         ),
                         SizedBox(height: 16),
-                        TextFormField(
-                          key: ValueKey('checkout-expiry'),
-                          controller: _expiry,
-                          enabled: !busy && allowed,
-                          decoration: InputDecoration(
-                            labelText: context.tr('Vencimiento (MM/AA)'),
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) =>
-                              _format(_expiry, value, formatExpiry),
-                          validator: (value) => context.validation(
-                            isValidFutureExpiry(value ?? '')
-                                ? null
-                                : 'Vencimiento inválido.',
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        TextFormField(
-                          key: ValueKey('checkout-cvv'),
-                          controller: _cvv,
-                          enabled: !busy && allowed,
-                          decoration: InputDecoration(
-                            labelText: context.tr('CVV'),
-                          ),
-                          keyboardType: TextInputType.number,
-                          obscureText: true,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
-                          validator: (value) => context.validation(
-                            isValidSecurityCode(value ?? '')
-                                ? null
-                                : 'CVV inválido.',
-                          ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final expiry = TextFormField(
+                              key: ValueKey('checkout-expiry'),
+                              controller: _expiry,
+                              enabled: !busy && allowed,
+                              decoration: InputDecoration(
+                                labelText: context.tr('Vencimiento (MM/AA)'),
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) =>
+                                  _format(_expiry, value, formatExpiry),
+                              validator: (value) => context.validation(
+                                isValidFutureExpiry(value ?? '')
+                                    ? null
+                                    : 'Vencimiento inválido.',
+                              ),
+                            );
+                            final cvv = TextFormField(
+                              key: ValueKey('checkout-cvv'),
+                              controller: _cvv,
+                              enabled: !busy && allowed,
+                              decoration: InputDecoration(
+                                labelText: context.tr('CVV'),
+                              ),
+                              keyboardType: TextInputType.number,
+                              obscureText: true,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(4),
+                              ],
+                              validator: (value) => context.validation(
+                                isValidSecurityCode(value ?? '')
+                                    ? null
+                                    : 'CVV inválido.',
+                              ),
+                            );
+                            return constraints.maxWidth >= 340 &&
+                                    MediaQuery.textScalerOf(context).scale(15) <
+                                        20
+                                ? Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(flex: 2, child: expiry),
+                                      SizedBox(width: 16),
+                                      Expanded(child: cvv),
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      expiry,
+                                      SizedBox(height: 16),
+                                      cvv,
+                                    ],
+                                  );
+                          },
                         ),
                         if (_error != null)
                           Text(
@@ -341,7 +366,7 @@ class _PaymentCheckoutSheetState extends ConsumerState<_PaymentCheckoutSheet> {
                               color: Theme.of(context).colorScheme.error,
                             ),
                           ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 24),
                         FilledButton(
                           key: ValueKey('checkout-pay'),
                           onPressed: busy || !allowed ? null : _pay,

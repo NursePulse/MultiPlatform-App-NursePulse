@@ -13,7 +13,7 @@ class PageTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Column(

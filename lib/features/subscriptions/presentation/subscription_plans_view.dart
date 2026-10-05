@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
@@ -26,14 +27,17 @@ class SubscriptionPlansView extends ConsumerWidget {
           if (state.loading || state.processing) LinearProgressIndicator(),
         ],
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(20),
           child: Wrap(
             spacing: 16,
             runSpacing: 16,
             children: [
-              Text(
-                context.tr(
-                  'Simulación de suscripción. No se realizan cobros reales.',
+              SizedBox(
+                width: double.infinity,
+                child: InfoNotice(
+                  context.tr(
+                    'Simulación de suscripción. No se realizan cobros reales.',
+                  ),
                 ),
               ),
               if (!allowed)
@@ -113,7 +117,7 @@ class _PlanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: plan.highlighted ? scheme.primary : scheme.outlineVariant,
-          width: plan.highlighted ? 2 : 1,
+          width: plan.highlighted ? 1.5 : 1,
         ),
       ),
       child: Padding(
@@ -157,7 +161,7 @@ class _PlanCard extends StatelessWidget {
             SizedBox(height: 12),
             for (final feature in plan.features)
               Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
+                padding: EdgeInsets.symmetric(vertical: 5),
                 child: Row(
                   children: [
                     Icon(Icons.check_rounded, size: 18, color: scheme.primary),
@@ -167,11 +171,14 @@ class _PlanCard extends StatelessWidget {
                 ),
               ),
             SizedBox(height: 16),
-            FilledButton(
-              key: ValueKey('subscription-select-${plan.id.name}'),
-              onPressed: isCurrent || !enabled ? null : onSelect,
-              child: Text(
-                context.tr(isCurrent ? 'Plan actual' : 'Elegir plan'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                key: ValueKey('subscription-select-${plan.id.name}'),
+                onPressed: isCurrent || !enabled ? null : onSelect,
+                child: Text(
+                  context.tr(isCurrent ? 'Plan actual' : 'Elegir plan'),
+                ),
               ),
             ),
           ],

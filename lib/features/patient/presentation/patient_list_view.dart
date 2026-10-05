@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
@@ -117,22 +118,13 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
         .toList();
 
     return Scaffold(
-      floatingActionButton: permissions.create
-          ? FloatingActionButton.extended(
-              onPressed: state.saving
-                  ? null
-                  : () => showPatientFormSheet(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Nuevo paciente')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
         child: ListPageBody(
           header: [
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -145,9 +137,11 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                     controller: _query,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: context.tr(
-                        'Buscar por nombre, documento, habitación o estado',
+                      labelText: context.tr('Buscar paciente'),
+                      helperText: context.tr(
+                        'Nombre, documento, habitación o estado',
                       ),
+                      helperMaxLines: 3,
                       prefixIcon: Icon(Icons.search),
                       suffixIcon: _query.text.isEmpty
                           ? null
@@ -167,10 +161,20 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                 ],
               ),
             ),
+            if (permissions.create)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed: state.saving
+                      ? null
+                      : () => showPatientFormSheet(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Nuevo paciente')),
+                ),
+              ),
             if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.error!))),
@@ -190,7 +194,7 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
             onRefresh: () => ref.read(patientNotifierProvider.notifier).load(),
             child: ListView.builder(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 96),
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
               itemCount: patients.isEmpty ? 1 : patients.length,
               itemBuilder: (context, index) {
                 if (patients.isEmpty) {
@@ -213,10 +217,11 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                 final p = patients[index];
 
                 return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8),
                   child: InkWell(
                     onTap: () => context.push('/patients/${p.id}/monitoring'),
                     child: Padding(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -266,31 +271,26 @@ class _PatientListViewState extends ConsumerState<PatientListView> {
                             ],
                           ),
                           SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: [
-                              StatusChip(
-                                label: context.patientStatus(p.statusLabel),
-                                palette: ClinicalColors.patientStatus(
-                                  p.statusLabel,
-                                ),
-                              ),
-                              Chip(
-                                label: Text(
-                                  context.tr(
-                                    'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
-                                  ),
-                                ),
-                              ),
-                            ],
+                          StatusChip(
+                            label: context.patientStatus(p.statusLabel),
+                            palette: ClinicalColors.patientStatus(
+                              p.statusLabel,
+                            ),
                           ),
-                          Text(
+                          SizedBox(height: 12),
+                          MetadataLine(
+                            Icons.bed_outlined,
+                            context.tr(
+                              'Hab. ${p.roomNumber} · Cama ${p.bedNumber}',
+                            ),
+                          ),
+                          MetadataLine(
+                            Icons.badge_outlined,
                             context.tr(
                               '${p.code} · Documento ${p.documentNumber} · ${p.age} años',
                             ),
                           ),
-                          SizedBox(height: 4),
+                          SizedBox(height: 12),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
@@ -64,13 +65,6 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     final patients = ref.watch(patientNotifierProvider).patients;
     final alerts = AlertRules.filter(state.alerts, _filter);
     return Scaffold(
-      floatingActionButton: allowed
-          ? FloatingActionButton.extended(
-              onPressed: state.saving ? null : () => showAlertForm(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Registrar alerta')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
@@ -81,8 +75,16 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
               subtitle:
                   '${state.alerts.where((a) => a.isActive).length} alertas pendientes',
             ),
+            if (allowed)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed: state.saving ? null : () => showAlertForm(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Registrar alerta')),
+                ),
+              ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Wrap(
                 spacing: 8,
                 children: [
@@ -98,7 +100,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
             if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.error!))),
@@ -114,7 +116,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
               ),
             if (state.warning != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.warning!))),
@@ -145,7 +147,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                   )
                 : ListView.builder(
                     physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: alerts.length,
                     itemBuilder: (context, index) {
                       final alert = alerts[index];
@@ -163,9 +165,8 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                       );
                       final pending = state.savingId == alert.id;
                       return ClinicalCard(
-                        accent: alert.isCritical
-                            ? ClinicalColors.dangerText
-                            : null,
+                        cardKey: ValueKey('alert-card-${alert.id}'),
+                        accent: _severityPalette(alert.severity).foreground,
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,9 +212,9 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                             alert.title,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          SizedBox(height: 4),
-                          Text(alert.description),
                           SizedBox(height: 8),
+                          Text(alert.description),
+                          SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -230,9 +231,11 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: 12),
                           Wrap(
-                            spacing: 8,
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.spaceBetween,
                             children: [
                               TextButton(
                                 onPressed: () => showDialog<void>(
@@ -282,8 +285,14 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                                 ),
                             ],
                           ),
-                          if (alert.status == AlertStatus.attended && !canClose)
-                            Text(context.tr('Pendiente de cierre médico.')),
+                          if (alert.status == AlertStatus.attended &&
+                              !canClose) ...[
+                            SizedBox(height: 12),
+                            Text(
+                              context.tr('Pendiente de cierre médico.'),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ],
                       );
                     },
