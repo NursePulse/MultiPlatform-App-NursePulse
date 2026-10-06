@@ -1,3 +1,6 @@
+import '../../../shared/widgets/clinical_card.dart';
+import '../../../shared/widgets/page_action.dart';
+import '../../../shared/widgets/audit_entry_card.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
@@ -89,7 +92,7 @@ class DashboardView extends ConsumerWidget {
             onRefresh: reload,
             child: ListView(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 24),
               children: [
                 if (!allowed)
                   Text(
@@ -125,7 +128,7 @@ class DashboardView extends ConsumerWidget {
                           ? 2
                           : 1;
                       final width =
-                          (constraints.maxWidth - (columns - 1) * 12) / columns;
+                          (constraints.maxWidth - (columns - 1) * 16) / columns;
                       final metrics = [
                         (
                           'Pacientes monitoreados',
@@ -180,7 +183,7 @@ class DashboardView extends ConsumerWidget {
                           Card(
                             margin: EdgeInsets.zero,
                             child: Padding(
-                              padding: EdgeInsets.all(14),
+                              padding: EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
@@ -234,7 +237,7 @@ class DashboardView extends ConsumerWidget {
                         children: [
                           for (var row = 0; row < cards.length; row += columns)
                             Padding(
-                              padding: EdgeInsets.only(bottom: 12),
+                              padding: EdgeInsets.only(bottom: 16),
                               child: IntrinsicHeight(
                                 child: Row(
                                   crossAxisAlignment:
@@ -246,7 +249,7 @@ class DashboardView extends ConsumerWidget {
                                           index < cards.length;
                                       index++
                                     ) ...[
-                                      if (index > row) SizedBox(width: 12),
+                                      if (index > row) SizedBox(width: 16),
                                       SizedBox(
                                         width: width,
                                         child: cards[index],
@@ -269,37 +272,65 @@ class DashboardView extends ConsumerWidget {
                           if (data.patients.isEmpty)
                             Text(context.tr('No hay pacientes registrados.')),
                           for (final patient in data.patients.take(5))
-                            Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  foregroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primary,
-                                  child: Text(patient.initials),
-                                ),
-                                title: Text(patient.fullName),
-                                subtitle: Text(
-                                  context.tr(
-                                    '${patient.code} · ${context.patientStatus(patient.statusLabel)}\n${context.tr('Hab. ${patient.roomNumber} · Cama ${patient.bedNumber}')}\n${patient.diagnosis}',
-                                  ),
-                                ),
-                                isThreeLine: true,
-                                onTap:
-                                    DashboardRules.canNavigate(
+                            ClinicalCard(
+                              cardKey: ValueKey(
+                                'dashboard-patient-${patient.id}',
+                              ),
+                              onTap:
+                                  DashboardRules.canNavigate(
+                                    user,
+                                    '/patients/${patient.id}/monitoring',
+                                  )
+                                  ? () => _go(
+                                      context,
                                       user,
                                       '/patients/${patient.id}/monitoring',
                                     )
-                                    ? () => _go(
-                                        context,
-                                        user,
-                                        '/patients/${patient.id}/monitoring',
-                                      )
-                                    : null,
-                                trailing: Icon(Icons.chevron_right),
-                              ),
+                                  : null,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(child: Text(patient.initials)),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        patient.fullName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12),
+                                StatusChip(
+                                  label: context.patientStatus(
+                                    patient.statusLabel,
+                                  ),
+                                  palette: ClinicalColors.patientStatus(
+                                    patient.statusLabel,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                MetadataLine(
+                                  Icons.bed_outlined,
+                                  context.tr(
+                                    '${patient.code} · Hab. ${patient.roomNumber} · Cama ${patient.bedNumber}',
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  patient.diagnosis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
                             ),
                         ],
                       ),
@@ -311,53 +342,61 @@ class DashboardView extends ConsumerWidget {
                             Text(context.tr('No hay alertas activas.')),
                           for (final alert
                               in data.alerts.where((a) => a.isActive).take(5))
-                            Card(
-                              child: Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      data.patients
-                                              .where(
-                                                (p) => p.id == alert.patientId,
-                                              )
-                                              .firstOrNull
-                                              ?.fullName ??
-                                          context.tr(
-                                            'Paciente #${alert.patientId}',
-                                          ),
-                                    ),
-                                    Text(alert.title),
-                                    Text(alert.description),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        StatusChip(
-                                          label: alert.severityLabel,
-                                          palette: alert.isCritical
-                                              ? ClinicalColors.riskCritical
-                                              : ClinicalColors.riskMedium,
-                                        ),
-                                        StatusChip(
-                                          label: alert.statusLabel,
-                                          palette: ClinicalColors.alertStatus(
-                                            alert.status.wireValue,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
+                            ClinicalCard(
+                              accent: ClinicalColors.severityAccent(
+                                alert.severity.wireValue,
+                              ),
+                              children: [
+                                Text(
+                                  data.patients
+                                          .where((p) => p.id == alert.patientId)
+                                          .firstOrNull
+                                          ?.fullName ??
                                       context.tr(
-                                        alert.triggeredAt == null
-                                            ? 'Generada: sin información'
-                                            : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
+                                        'Paciente #${alert.patientId}',
+                                      ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
+                                ),
+                                SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    StatusChip(
+                                      label: alert.severityLabel,
+                                      palette: ClinicalColors.severity(
+                                        alert.severity.wireValue,
+                                      ),
+                                    ),
+                                    StatusChip(
+                                      label: alert.statusLabel,
+                                      palette: ClinicalColors.alertStatus(
+                                        alert.status.wireValue,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                SizedBox(height: 12),
+                                Text(
+                                  alert.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
+                                ),
+                                SizedBox(height: 8),
+                                Text(alert.description),
+                                SizedBox(height: 12),
+                                MetadataLine(
+                                  Icons.schedule,
+                                  context.tr(
+                                    alert.triggeredAt == null
+                                        ? 'Generada: sin información'
+                                        : 'Generada: ${DateFormat('dd/MM/yyyy HH:mm').format(alert.triggeredAt!.toLocal())}',
+                                  ),
+                                ),
+                              ],
                             ),
                         ],
                       ),
@@ -373,21 +412,7 @@ class DashboardView extends ConsumerWidget {
                     if (data.audits != null && data.audits!.isEmpty)
                       Text(context.tr('No hay movimientos de auditoría.')),
                     for (final log in data.audits?.take(5) ?? <AuditLog>[])
-                      Card(
-                        child: ListTile(
-                          title: Text(
-                            context.tr(
-                              '${context.tr(log.actionLabel)} · ${context.tr(log.entityLabel)} #${log.entityId}',
-                            ),
-                          ),
-                          subtitle: Text(
-                            context.tr(
-                              '${log.performedBy}\n${DateFormat('dd/MM/yyyy HH:mm').format(log.performedAt.toLocal())}',
-                            ),
-                          ),
-                          isThreeLine: true,
-                        ),
-                      ),
+                      AuditEntryCard(log),
                   ],
                 ],
                 if (allowed) ...[

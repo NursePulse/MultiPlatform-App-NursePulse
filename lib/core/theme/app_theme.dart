@@ -309,9 +309,9 @@ class ChipPalette {
   final Color foreground;
 }
 
-/// Every status/severity/risk color pair used across the Angular app,
-/// reproduced with the exact same hex values so a given clinical state reads
-/// identically on both platforms.
+/// Clinical severity retains its meaning independently of the role theme.
+/// The approved mobile design uses a neutral OPEN pill so an active alert
+/// cannot look critical solely because of its workflow state.
 class ClinicalColors {
   ClinicalColors._();
 
@@ -389,14 +389,26 @@ class ClinicalColors {
   );
 
   static ChipPalette severity(String value) => switch (value) {
-    'CRITICAL' || 'HIGH' => severityCritical,
-    _ => severityModerate,
+    'CRITICAL' => riskCritical,
+    'HIGH' => riskHigh,
+    'LOW' => riskLow,
+    'MEDIUM' || 'MODERATE' => riskMedium,
+    _ => riskUnassessed,
   };
 
-  // Alert status — alert-list.css [data-status="..."]
+  // Bright rails distinguish severity; chip text keeps its darker contrast.
+  static Color severityAccent(String value) => switch (value) {
+    'CRITICAL' => const Color(0xFFDC2626),
+    'HIGH' => const Color(0xFFF97316),
+    'MEDIUM' || 'MODERATE' => const Color(0xFFEAB308),
+    'LOW' => const Color(0xFF15803D),
+    _ => riskUnassessed.foreground,
+  };
+
+  // Workflow status stays separate from the severity rail and severity pill.
   static const ChipPalette alertOpen = ChipPalette(
-    Color(0xFFFEE2E2),
-    Color(0xFFB91C1C),
+    Color(0xFFF1F5F9),
+    Color(0xFF475569),
   );
   static const ChipPalette alertAttended = ChipPalette(
     Color(0xFFFEF3C7),

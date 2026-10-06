@@ -9,6 +9,8 @@ import 'brand_mark.dart';
 import 'language_selector.dart';
 import '../../features/iam/application/auth_notifier.dart';
 import '../../features/iam/domain/user.dart';
+import '../../features/notification/application/alert_inbox.dart';
+import '../../features/notification/presentation/alert_notifications.dart';
 
 class _NavItem {
   const _NavItem(this.path, this.label, this.icon, {this.visibleFor});
@@ -60,8 +62,38 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    Future.microtask(() {
+      if (!mounted) return;
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      final active =
+          lifecycle == null || lifecycle == AppLifecycleState.resumed;
+      ref.read(alertAppActiveProvider.notifier).state = active;
+      ref.read(alertInboxProvider.notifier).setActive(active);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    ref.read(alertAppActiveProvider.notifier).state =
+        state == AppLifecycleState.resumed;
+    ref
+        .read(alertInboxProvider.notifier)
+        .setActive(state == AppLifecycleState.resumed);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,16 +201,28 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-  Widget _content() => Align(
-    alignment: Alignment.topCenter,
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: 1200),
-      child: MediaQuery.removePadding(
-        context: context,
-        removeTop: true,
-        removeBottom: true,
-        child: widget.child,
-      ),
+  Widget _content() => LayoutBuilder(
+    builder: (context, constraints) => Column(
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: constraints.maxHeight * .35),
+          child: const SingleChildScrollView(child: AlertNotificationBanner()),
+        ),
+        Expanded(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 1200),
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                removeBottom: true,
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 
@@ -344,6 +388,7 @@ class _ShellHeader extends StatelessWidget {
                       )
                     : const BrandWordmark(light: true),
               ),
+              const AlertNotificationButton(),
               LanguageSelector(light: true),
               accountMenu,
             ],

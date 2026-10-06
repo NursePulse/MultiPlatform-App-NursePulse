@@ -89,11 +89,20 @@ void main() {
         );
       await mount(tester, api, actor: actor);
       expect(find.text('2 movimientos consultados'), findsOneWidget);
-      expect(find.text('2 movimientos en total'), findsOneWidget);
       expect(
         tester.getTopLeft(find.text('Segundo')).dy,
         lessThan(tester.getTopLeft(find.text('Primero')).dy),
       );
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('audit-next')),
+        200,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('2 movimientos en total'), findsOneWidget);
       expect(
         tester
             .widget<TextButton>(find.byKey(const ValueKey('audit-next')))
@@ -115,7 +124,15 @@ void main() {
           last: page == 1,
         );
       await mount(tester, api);
-      await tester.ensureVisible(find.byKey(const ValueKey('audit-next')));
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('audit-next')),
+        200,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('audit-next')));
       await tester.pumpAndSettle();
       expect(api.page, 1);

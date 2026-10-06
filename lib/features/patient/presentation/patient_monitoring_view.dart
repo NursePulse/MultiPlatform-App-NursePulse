@@ -1,3 +1,4 @@
+import '../../../shared/widgets/vital_metrics.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import '../../../shared/widgets/clinical_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 
 import '../../clinical_event/domain/clinical_event.dart';
+import '../../notification/domain/alert.dart';
 import '../../iam/domain/user.dart';
 import '../application/patient_detail.dart';
 import '../application/patient_notifier.dart';
@@ -103,12 +105,22 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
     ),
   );
 
-  Widget _card(String title, List<String> lines) => ClinicalCard(
+  Widget _card(
+    String title,
+    List<String> lines, {
+    Color? accent,
+    List<Widget> tags = const [],
+  }) => ClinicalCard(
+    accent: accent,
     children: [
       Text(title, style: Theme.of(context).textTheme.titleSmall),
-      SizedBox(height: 6),
+      SizedBox(height: 12),
+      if (tags.isNotEmpty) ...[
+        Wrap(spacing: 8, runSpacing: 8, children: tags),
+        SizedBox(height: 12),
+      ],
       for (final line in lines)
-        Padding(padding: EdgeInsets.only(bottom: 5), child: Text(line)),
+        Padding(padding: EdgeInsets.only(bottom: 8), child: Text(line)),
     ],
   );
 
@@ -180,17 +192,21 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       if (vitals.isEmpty)
         Text(context.tr('No hay signos vitales en este periodo.')),
       for (final v in vitals)
-        _card(_time(v.recordedAt), [
-          context.tr(
-            'Presión: ${v.systolic}/${v.diastolic} mmHg · FC: ${v.heartRate} lpm',
-          ),
-          context.tr(
-            'FR: ${v.respiratoryRate} rpm · SpO₂: ${v.oxygenSaturation} %',
-          ),
-          context.tr(
-            'Temperatura: ${v.temperature} °C · Riesgo: ${context.tr(v.riskLabel)}',
-          ),
-        ]),
+        ClinicalCard(
+          children: [
+            Text(
+              _time(v.recordedAt),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            SizedBox(height: 12),
+            StatusChip(
+              label: v.riskLabel,
+              palette: ClinicalColors.risk(v.riskLevel.name.toUpperCase()),
+            ),
+            SizedBox(height: 16),
+            VitalMetrics(v),
+          ],
+        ),
       _title('Eventos clínicos (${events.length})'),
       if (events.isEmpty)
         Text(context.tr('No hay eventos clínicos en este periodo.')),
@@ -203,7 +219,7 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
           e.description,
           if (e.registeredBy.isNotEmpty)
             context.tr('Registrado por: ${e.registeredBy}'),
-        ]),
+        ], accent: ClinicalColors.severityAccent(e.severity)),
       _title('Alertas (${history.alerts.length})'),
       TextButton(
         onPressed: () => context.go('/alerts'),
@@ -213,20 +229,35 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       if (history.alerts.isEmpty)
         Text(context.tr('No hay alertas registradas.')),
       for (final a in history.alerts)
-        _card(a.title, [
-          a.message,
-          '${context.tr(a.severityLabel)} · ${context.tr(a.statusLabel)}',
-          a.triggeredAt == null
-              ? context.tr('Generada: sin información')
-              : context.tr('Generada: ${_time(a.triggeredAt!)}'),
-          if (a.attendedBy != null) context.tr('Atendida por: ${a.attendedBy}'),
-          if (a.attendedAt != null)
-            context.tr('Atendida: ${_time(a.attendedAt!)}'),
-          if (a.closedBy != null) context.tr('Cerrada por: ${a.closedBy}'),
-          if (a.closedAt != null) context.tr('Cerrada: ${_time(a.closedAt!)}'),
-          if (a.resolutionNotes?.isNotEmpty == true)
-            context.tr('Resolución: ${a.resolutionNotes}'),
-        ]),
+        _card(
+          a.title,
+          [
+            a.message,
+            a.triggeredAt == null
+                ? context.tr('Generada: sin información')
+                : context.tr('Generada: ${_time(a.triggeredAt!)}'),
+            if (a.attendedBy != null)
+              context.tr('Atendida por: ${a.attendedBy}'),
+            if (a.attendedAt != null)
+              context.tr('Atendida: ${_time(a.attendedAt!)}'),
+            if (a.closedBy != null) context.tr('Cerrada por: ${a.closedBy}'),
+            if (a.closedAt != null)
+              context.tr('Cerrada: ${_time(a.closedAt!)}'),
+            if (a.resolutionNotes?.isNotEmpty == true)
+              context.tr('Resolución: ${a.resolutionNotes}'),
+          ],
+          accent: ClinicalColors.severityAccent(a.severity.wireValue),
+          tags: [
+            StatusChip(
+              label: a.severityLabel,
+              palette: ClinicalColors.severity(a.severity.wireValue),
+            ),
+            StatusChip(
+              label: a.statusLabel,
+              palette: ClinicalColors.alertStatus(a.status.wireValue),
+            ),
+          ],
+        ),
     ];
   }
 
@@ -244,7 +275,7 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(20),
           physics: AlwaysScrollableScrollPhysics(),
           children: [
             ...(!allowed
@@ -265,45 +296,49 @@ class _PatientMonitoringViewState extends ConsumerState<PatientMonitoringView> {
                       ),
                     ],
                     data: (p) => [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .primaryContainer,
-                            foregroundColor: Theme.of(context)
-                                .colorScheme
-                                .primary,
-                            child: Text(p.initials),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  p.fullName,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                Text(p.code),
-                                SizedBox(height: 6),
-                                StatusChip(
-                                  label: context.patientStatus(p.statusLabel),
-                                  palette: ClinicalColors.patientStatus(
-                                    p.statusLabel,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
                       ClinicalCard(
                         children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                foregroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                                child: Text(p.initials),
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      p.fullName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge,
+                                    ),
+                                    Text(p.code),
+                                    SizedBox(height: 6),
+                                    StatusChip(
+                                      label: context.patientStatus(
+                                        p.statusLabel,
+                                      ),
+                                      palette: ClinicalColors.patientStatus(
+                                        p.statusLabel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
                           InfoField(
                             'Documento:',
                             '${p.documentNumber} · ${p.age} ${context.tr('años')}',

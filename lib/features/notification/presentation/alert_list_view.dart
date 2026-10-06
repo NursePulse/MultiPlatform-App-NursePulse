@@ -1,8 +1,10 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -25,7 +27,8 @@ ChipPalette _severityPalette(AlertSeverity severity) => switch (severity) {
 };
 
 class AlertListView extends ConsumerStatefulWidget {
-  const AlertListView({super.key});
+  const AlertListView({super.key, this.alertId});
+  final String? alertId;
   @override
   ConsumerState<AlertListView> createState() => _AlertListViewState();
 }
@@ -37,9 +40,36 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(alertNotifierProvider.notifier).load();
+      if (!ref.read(alertNotifierProvider).loading) {
+        ref.read(alertNotifierProvider.notifier).load();
+      }
       if (ref.read(alertCanManageProvider)) {
         ref.read(patientNotifierProvider.notifier).load();
+      }
+    });
+    _openLinkedAlert();
+  }
+
+  @override
+  void didUpdateWidget(covariant AlertListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.alertId != oldWidget.alertId) _openLinkedAlert();
+  }
+
+  void _openLinkedAlert() {
+    final id = widget.alertId;
+    if (id == null || AlertRules.id(id, 'una alerta') != null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !ref.read(alertCanManageProvider)) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDetailDialog(alertId: id),
+      );
+      if (!mounted) return;
+      final router = GoRouter.of(context);
+      final uri = router.routeInformationProvider.value.uri;
+      if (uri.path == '/alerts' && uri.queryParameters['alert'] == id) {
+        router.go('/alerts');
       }
     });
   }
@@ -64,13 +94,6 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
     final patients = ref.watch(patientNotifierProvider).patients;
     final alerts = AlertRules.filter(state.alerts, _filter);
     return Scaffold(
-      floatingActionButton: allowed
-          ? FloatingActionButton.extended(
-              onPressed: state.saving ? null : () => showAlertForm(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Registrar alerta')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
@@ -81,13 +104,23 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
               subtitle:
                   '${state.alerts.where((a) => a.isActive).length} alertas pendientes',
             ),
+            if (allowed)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed: state.saving ? null : () => showAlertForm(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Registrar alerta')),
+                ),
+              ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final filter in AlertFilter.values)
                     ChoiceChip(
+                      key: ValueKey('alert-filter-${filter.name}'),
                       label: Text(context.tr(filter.label)),
                       selected: _filter == filter,
                       onSelected: (_) => setState(() => _filter = filter),
@@ -98,7 +131,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
             if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.error!))),
@@ -114,7 +147,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
               ),
             if (state.warning != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.warning!))),
@@ -133,6 +166,7 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
             onRefresh: () => ref.read(alertNotifierProvider.notifier).load(),
             child: alerts.isEmpty
                 ? ListView(
+                    key: ValueKey(_filter),
                     physics: AlwaysScrollableScrollPhysics(),
                     children: [
                       Padding(
@@ -144,8 +178,9 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                     ],
                   )
                 : ListView.builder(
+                    key: ValueKey(_filter),
                     physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: alerts.length,
                     itemBuilder: (context, index) {
                       final alert = alerts[index];
@@ -163,9 +198,10 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                       );
                       final pending = state.savingId == alert.id;
                       return ClinicalCard(
-                        accent: alert.isCritical
-                            ? ClinicalColors.dangerText
-                            : null,
+                        cardKey: ValueKey('alert-card-${alert.id}'),
+                        accent: ClinicalColors.severityAccent(
+                          alert.severity.wireValue,
+                        ),
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,9 +247,9 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                             alert.title,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          SizedBox(height: 4),
-                          Text(alert.description),
                           SizedBox(height: 8),
+                          Text(alert.description),
+                          SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -230,9 +266,11 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: 12),
                           Wrap(
-                            spacing: 8,
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.spaceBetween,
                             children: [
                               TextButton(
                                 onPressed: () => showDialog<void>(
@@ -282,8 +320,14 @@ class _AlertListViewState extends ConsumerState<AlertListView> {
                                 ),
                             ],
                           ),
-                          if (alert.status == AlertStatus.attended && !canClose)
-                            Text(context.tr('Pendiente de cierre médico.')),
+                          if (alert.status == AlertStatus.attended &&
+                              !canClose) ...[
+                            SizedBox(height: 12),
+                            Text(
+                              context.tr('Pendiente de cierre médico.'),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ],
                       );
                     },

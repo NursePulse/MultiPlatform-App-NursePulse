@@ -4,13 +4,15 @@ import 'alert.dart';
 const alertDefaultActor = 'Equipo clínico';
 const alertClosingNotes = 'Alerta cerrada desde seguimiento clínico.';
 
-enum AlertFilter { all, critical, moderate }
+enum AlertFilter { all, critical, high, moderate, low }
 
 extension AlertFilterX on AlertFilter {
   String get label => switch (this) {
     AlertFilter.all => 'Todas',
     AlertFilter.critical => 'Críticas',
+    AlertFilter.high => 'Altas',
     AlertFilter.moderate => 'Moderadas',
+    AlertFilter.low => 'Bajas',
   };
 }
 
@@ -65,7 +67,9 @@ class AlertRules {
           switch (filter) {
             AlertFilter.all => true,
             AlertFilter.critical => alert.isCritical,
-            AlertFilter.moderate => !alert.isCritical,
+            AlertFilter.high => alert.severity == AlertSeverity.high,
+            AlertFilter.moderate => alert.severity == AlertSeverity.medium,
+            AlertFilter.low => alert.severity == AlertSeverity.low,
           })
         alert,
   ];

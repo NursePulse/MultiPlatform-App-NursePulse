@@ -268,6 +268,10 @@ void main() {
         findsOneWidget,
       );
       api.snapshot = data(audits: [audit()]);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('dashboard-audit-retry')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('dashboard-audit-retry')));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
@@ -299,7 +303,11 @@ void main() {
         ],
       );
     await mount(tester, api);
-    final patientTiles = find.byType(ListTile);
+    final patientTiles = find.byWidgetPredicate(
+      (w) =>
+          w.key is ValueKey<String> &&
+          (w.key as ValueKey<String>).value.startsWith('dashboard-patient-'),
+    );
     await tester.scrollUntilVisible(
       patientTiles.first,
       300,

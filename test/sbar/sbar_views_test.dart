@@ -319,10 +319,34 @@ void main() {
       await tester.tap(find.text('SBAR ficticio'));
       await tester.pumpAndSettle();
       expect(api.detailReads, 1);
-      expect(find.text('Antecedentes ficticios'), findsOneWidget);
-      expect(find.text('Evaluación ficticia'), findsOneWidget);
-      expect(find.text('Recomendación ficticia'), findsOneWidget);
-      expect(find.text('Para: receiver.test'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Antecedentes ficticios'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Evaluación ficticia'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Recomendación ficticia'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Para: receiver.test'),
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -334,11 +358,22 @@ void main() {
       api.writing = () => pending.future;
       await mount(tester, api, list: true);
       final button = find.byKey(const ValueKey('sbar-ack-9'));
+      await tester.scrollUntilVisible(
+        button,
+        200,
+        scrollable: find.descendant(
+          of: find.byType(RefreshIndicator),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
       await tester.tap(button);
       await tester.tap(button);
       await tester.pump();
       expect(api.patches, 1);
-      expect(tester.widget<IconButton>(button).onPressed, isNull);
+      expect(tester.widget<FilledButton>(button).onPressed, isNull);
       pending.complete(
         SbarWriteReceipt(
           id: '9',
@@ -364,7 +399,13 @@ void main() {
     api.detailFailure = null;
     await tester.tap(find.text('Reintentar detalle'));
     await tester.pumpAndSettle();
-    expect(find.text('Antecedentes ficticios'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Antecedentes ficticios'),
+      ),
+      findsOneWidget,
+    );
     expect(api.posts + api.patches, 0);
     expect(tester.takeException(), isNull);
   });

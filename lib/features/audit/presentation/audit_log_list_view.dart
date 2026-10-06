@@ -1,9 +1,10 @@
+import '../../../shared/widgets/audit_entry_card.dart';
+import '../../../shared/widgets/page_action.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../shared/widgets/page_title.dart';
 import '../application/audit_notifier.dart';
@@ -39,7 +40,7 @@ class AuditLogListView extends ConsumerWidget {
             onRefresh: notifier.reload,
             child: ListView(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(20),
               children: !allowed
                   ? [
                       Text(
@@ -98,7 +99,7 @@ class AuditLogListView extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      Text(
+                      InfoNotice(
                         context.tr(
                           'El PDF incluye hasta 200 movimientos del filtro seleccionado.',
                         ),
@@ -183,34 +184,9 @@ class AuditLogListView extends ConsumerWidget {
                       ],
                       if (state.hasLoaded && state.logs.isEmpty)
                         Text(context.tr('No hay movimientos de auditoría.')),
-                      for (final log in state.logs)
-                        Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.tr(
-                                    '${log.code} · ${context.tr(log.actionLabel)}',
-                                  ),
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                Text(log.description),
-                                Text(
-                                  context.tr(
-                                    '${context.tr(log.entityLabel)} #${log.entityId}',
-                                  ),
-                                ),
-                                Text(
-                                  context.tr(
-                                    'Por ${log.performedBy} · ${DateFormat('dd/MM/yyyy HH:mm').format(log.performedAt.toLocal())}',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      SizedBox(height: 16),
+                      for (final log in state.logs) AuditEntryCard(log),
+                      SizedBox(height: 16),
                       if (selected == null && state.totalElements != null) ...[
                         Text(
                           context.tr(

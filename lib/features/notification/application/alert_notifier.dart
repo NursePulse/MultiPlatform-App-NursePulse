@@ -19,6 +19,7 @@ class AlertState {
   const AlertState({
     this.alerts = const [],
     this.loading = false,
+    this.loaded = false,
     this.saving = false,
     this.savingId,
     this.error,
@@ -26,13 +27,14 @@ class AlertState {
     this.confirmedActions = const {},
   });
   final List<Alert> alerts;
-  final bool loading, saving;
+  final bool loading, loaded, saving;
   final String? savingId, error, warning;
   final Set<String> confirmedActions;
 
   AlertState copyWith({
     List<Alert>? alerts,
     bool? loading,
+    bool? loaded,
     bool? saving,
     String? savingId,
     String? error,
@@ -44,6 +46,7 @@ class AlertState {
   }) => AlertState(
     alerts: alerts ?? this.alerts,
     loading: loading ?? this.loading,
+    loaded: loaded ?? this.loaded,
     saving: saving ?? this.saving,
     savingId: clearSavingId ? null : savingId ?? this.savingId,
     error: clearError ? null : error ?? this.error,
@@ -137,18 +140,22 @@ class AlertNotifier extends StateNotifier<AlertState> {
     }
   }
 
-  Future<void> load() async {
+  Future<void> load({bool quiet = false}) async {
     if (state.saving) return;
     final request = ++_request, revision = _revision;
-    state = state.copyWith(loading: true, clearError: true);
+    if (!quiet) state = state.copyWith(loading: true, clearError: true);
     try {
       _actor();
       final alerts = await _api.getAll();
       if (mounted && request == _request && revision == _revision) {
-        state = state.copyWith(alerts: _sorted(alerts));
+        state = state.copyWith(
+          alerts: _sorted(alerts),
+          loaded: true,
+          clearError: true,
+        );
       }
     } catch (e) {
-      if (mounted && request == _request && revision == _revision) {
+      if (!quiet && mounted && request == _request && revision == _revision) {
         state = state.copyWith(error: describeAlertError(e));
       }
     } finally {

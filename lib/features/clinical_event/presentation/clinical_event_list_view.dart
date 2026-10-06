@@ -1,3 +1,4 @@
+import '../../../shared/widgets/page_action.dart';
 import '../../../shared/widgets/list_page_body.dart';
 import '../../../core/localization/app_strings.dart';
 
@@ -50,25 +51,29 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
     final patients = ref.watch(patientNotifierProvider).patients;
     final allowed = ref.watch(clinicalEventCanRegisterProvider);
     return Scaffold(
-      floatingActionButton: allowed
-          ? FloatingActionButton.extended(
-              onPressed: state.saving
-                  ? null
-                  : () => showClinicalEventForm(context),
-              icon: Icon(Icons.add),
-              label: Text(context.tr('Registrar evento')),
-            )
-          : null,
       body: SafeArea(
         top: false,
         bottom: false,
         child: ListPageBody(
           header: [
-            PageTitle('Eventos clínicos'),
+            PageTitle(
+              'Eventos clínicos',
+              subtitle: '${state.events.length} eventos registrados',
+            ),
+            if (allowed)
+              PageAction(
+                child: FilledButton.icon(
+                  onPressed: state.saving
+                      ? null
+                      : () => showClinicalEventForm(context),
+                  icon: Icon(Icons.add),
+                  label: Text(context.tr('Registrar evento')),
+                ),
+              ),
             if (state.loading || state.saving) LinearProgressIndicator(),
             if (state.error != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.error!))),
@@ -85,7 +90,7 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
               ),
             if (state.warning != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(child: Text(context.tr(state.warning!))),
@@ -105,7 +110,7 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                 ref.read(clinicalEventNotifierProvider.notifier).load(),
             child: ListView(
               physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 96),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 24),
               children: [
                 if (state.events.isEmpty &&
                     !state.loading &&
@@ -119,21 +124,34 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                   ),
                 for (final event in state.events)
                   Padding(
-                    padding: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.zero,
                     child: ClinicalCard(
+                      accent: ClinicalColors.severityAccent(event.severity),
                       children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(child: Icon(Icons.person_outline)),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _patientName(patients, event.patientId),
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
                         Text(
                           event.title,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        SizedBox(height: 4),
-                        Text(_patientName(patients, event.patientId)),
-                        SizedBox(height: 8),
+                        SizedBox(height: 12),
                         StatusChip(
                           label: ClinicalEventSeverity.labelFor(event.severity),
                           palette: _severityPalette(event.severity),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 12),
                         Text(
                           context.tr(
                             ClinicalEventType.labelFor(event.eventType),
@@ -144,9 +162,11 @@ class _ClinicalEventListViewState extends ConsumerState<ClinicalEventListView> {
                           _dateFormat.format(event.occurredAt.toLocal()),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 16),
                         Text(event.description),
-                        SizedBox(height: 8),
+                        SizedBox(height: 12),
+                        Divider(),
+                        SizedBox(height: 4),
                         Text(
                           context.tr('Responsable: ${event.registeredBy}'),
                           style: Theme.of(context).textTheme.bodySmall,
